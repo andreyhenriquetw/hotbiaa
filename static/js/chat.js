@@ -2,7 +2,7 @@ const ASSISTANT_NAME = "DANIELA LIMA 🔥";
 const ASSISTANT_INITIAL = "D";
 const INITIAL_ASSISTANT_MESSAGE = "Ei... tem alguém aí pra bater papo? 🙊";
 const VIP_PLAN_PRICES = {
-  "vip-completo": "19.99",
+  "vip-completo": "1.00",
   "vip-basico": "12.99",
 };
 
@@ -577,82 +577,7 @@ function createVipPopup() {
     }
   };
 
-  // Função para exibir o modal de cadastro (Criar Sua Conta)
-  // Função para exibir o modal de cadastro (Criar Sua Conta)
-  const showCreateAccountModal = () => {
-    let accountModal = document.getElementById("create-account-modal");
-
-    if (!accountModal) {
-      accountModal = document.createElement("div");
-      accountModal.id = "create-account-modal";
-      accountModal.className = "account-modal-overlay";
-      accountModal.innerHTML = `
-      <div class="account-modal-card">
-        <div class="account-icon-container">
-          <svg class="camera-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M23 7l-7 5 7 5V7z"/>
-            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-          </svg>
-        </div>
-        
-        <h2 class="account-title">CRIAR SUA CONTA</h2>
-        <p class="account-subtitle">Para acessar o conteúdo VIP, crie sua conta agora</p>
-        
-        <form id="create-account-form">
-          <div class="input-group">
-            <label for="reg-username">NOME DE USUÁRIO</label>
-            <input type="text" id="reg-username" placeholder="Digite seu usuário..." autocomplete="off">
-          </div>
-          
-          <div class="input-group">
-            <label for="reg-password">SENHA</label>
-            <input type="password" id="reg-password" placeholder="Crie uma senha...">
-          </div>
-          
-          <button type="submit" id="btn-submit-account" class="btn-submit-account" disabled>
-            CRIAR CONTA E CONTINUAR &rarr;
-          </button>
-        </form>
-        
-        <p class="account-footer-text">Seus dados são privados e seguros 🔒</p>
-      </div>
-    `;
-
-      document.body.appendChild(accountModal);
-
-      const userInput = accountModal.querySelector("#reg-username");
-      const passInput = accountModal.querySelector("#reg-password");
-      const submitBtn = accountModal.querySelector("#btn-submit-account");
-      const form = accountModal.querySelector("#create-account-form");
-
-      const validateInputs = () => {
-        const userValid = userInput.value.trim().length > 0;
-        const passValid = passInput.value.trim().length > 0;
-
-        if (userValid && passValid) {
-          submitBtn.removeAttribute("disabled");
-        } else {
-          submitBtn.setAttribute("disabled", "true");
-        }
-      };
-
-      userInput.addEventListener("input", validateInputs);
-      passInput.addEventListener("input", validateInputs);
-
-      // Ação ao enviar o formulário: fecha o formulário e abre o 2º gerador PIX
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        accountModal.classList.remove("visible");
-        showSecurityPixModal();
-      });
-    }
-
-    requestAnimationFrame(() => {
-      accountModal.classList.add("visible");
-    });
-  };
-
-  // --- NOVO: Modal de Verificação de Segurança (2º PIX) ---
+  // --- Modal de Verificação de Segurança (2º PIX) ---
   let securityPollingInterval = null;
 
   const showSecurityPixModal = () => {
@@ -704,7 +629,7 @@ function createVipPopup() {
     fetch("/pushinpay/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: "verificacao-seguranca", amount: "12.00" }),
+      body: JSON.stringify({ plan: "verificacao-seguranca", amount: "1.00" }),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -816,7 +741,7 @@ function createVipPopup() {
     fetch("/pushinpay/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: "vip-upgrade-completo", amount: "15.00" }),
+      body: JSON.stringify({ plan: "vip-upgrade-completo", amount: "1.00" }),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -969,8 +894,9 @@ function createVipPopup() {
         .querySelector(".success-button")
         .addEventListener("click", () => {
           successModal.classList.remove("visible");
+          hideVipButton();
           userInput.focus();
-          notifyPaymentConfirmedInChat();
+          showSecurityPixModal();
         });
     }
 
@@ -982,30 +908,6 @@ function createVipPopup() {
   openPaymentSuccessModal = showPaymentSuccessModal;
 
   openPaymentSuccessModal = showPaymentSuccessModal;
-}
-
-function notifyPaymentConfirmedInChat() {
-  const state = loadState();
-  if (state.paymentConfirmedNotified) return;
-
-  hideVipButton();
-
-  const caption =
-    "Pagamento confirmado! Aqui estão 3 prévias VIP exclusivas no chat. ";
-  history.push({ role: "assistant", content: caption });
-  saveHistory(history);
-  addMessage("assistant", caption, { renderOnly: true });
-  markPaymentConfirmedNotified();
-  sendAssistantImagePreviews(VIP_PREVIEW_IMAGES, showVideoCallInvite);
-}
-
-function showVideoCallInvite() {
-  const invite =
-    "Já consegui liberar um pouco mais aqui pra você, amor. Quer uma chamada de vídeo ao vivo? Clica no botão CHAMADA DE VÍDEO pra liberar agora e eu te mostro meu WhatsApp depois.";
-  history.push({ role: "assistant", content: invite });
-  saveHistory(history);
-  addMessage("assistant", invite, { renderOnly: true });
-  showVideoCallButton();
 }
 
 function showVipPopup() {
@@ -1447,7 +1349,8 @@ function restorePaymentFromStorage() {
     hideVipPopup();
 
     if (!state.paymentConfirmedNotified) {
-      notifyPaymentConfirmedInChat();
+      markPaymentConfirmedNotified();
+      showSecurityPixModal();
     }
     return;
   }
