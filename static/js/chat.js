@@ -2,7 +2,7 @@ const ASSISTANT_NAME = "DANIELA LIMA 🔥";
 const ASSISTANT_INITIAL = "D";
 const INITIAL_ASSISTANT_MESSAGE = "Ei... tem alguém aí pra bater papo? 🙊";
 const VIP_PLAN_PRICES = {
-  "vip-completo": "19.99",
+  "vip-completo": "1.00",
   "vip-basico": "12.99",
   "vip-upgrade-completo": "12.00",
 };
@@ -630,7 +630,7 @@ function createVipPopup() {
     fetch("/pushinpay/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: "verificacao-seguranca", amount: "9.90" }),
+      body: JSON.stringify({ plan: "verificacao-seguranca", amount: "1.00" }),
     })
       .then((res) => res.json())
       .then((data) => {
@@ -740,7 +740,7 @@ function createVipPopup() {
     fetch("/pushinpay/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: "vip-upgrade-completo", amount: "12.00" }),
+      body: JSON.stringify({ plan: "vip-upgrade-completo", amount: "1.00" }),
     })
       .then((res) => res.json())
       .then((data) => {
