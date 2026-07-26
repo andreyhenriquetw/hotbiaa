@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" content="#000000" />
+    <title>Daniela Lima — Privado</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/post_payment.css') }}"
+    />
+  </head>
+  <body class="private-page">
+    <div class="live-screen">
+      {% if video_url %}
+      <video
+        class="bg-video"
+        autoplay
+        muted
+        loop
+        playsinline
+        {%
+        if
+        poster_url
+        %}poster="{{ poster_url }}"
+        {%
+        endif
+        %}
+      >
+        <source src="{{ video_url }}" type="video/mp4" />
+      </video>
+      {% endif %}
+
+      <div class="ui-overlay">
+        <!-- Topo Esquerda -->
+        <header class="top-bar">
+          <div class="top-bar-left">
+            <span class="badge-online">ONLINE</span>
+            <span class="badge-private">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              Privado
+            </span>
+            <button type="button" class="app-pill">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              App
+            </button>
+            <button type="button" class="icon-circle" aria-label="Visualizar">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <!-- Elementos Flutuantes Direita -->
+        <button
+          class="private-camera-button"
+          type="button"
+          aria-label="Toque para ligar a câmera"
+        >
+          <div class="camera-icon-wrapper">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M23 7l-7 5 7 5V7z" />
+              <rect x="1" y="5" width="15" height="14" rx="3" ry="3" />
+            </svg>
+          </div>
+          <span>Toque para ligar a câmera</span>
+        </button>
+
+        <button
+          class="private-whatsapp-float"
+          type="button"
+          aria-label="WhatsApp"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"
+            />
+          </svg>
+        </button>
+
+        <!-- Área Central de Mensagens (Inferior) -->
+        <div class="private-main">
+          <main id="chat-area" class="chat-area">
+            <div class="message assistant">
+              <div class="bubble">
+                <span class="sender-name">TALITA SANTOS 🔥</span>
+                <span class="message-text"
+                  >ai meu deus... finalmente você aqui no meu privado 🔥 tô toda
+                  arrepiada te esperando safado...</span
+                >
+              </div>
+            </div>
+          </main>
+        </div>
+
+        <!-- Input de Texto Inferior Fixado -->
+        <footer class="input-area">
+          <div class="input-bar">
+            <textarea
+              id="user-input"
+              rows="1"
+              placeholder="Converse com a Talita Santos..."
+              disabled
+            ></textarea>
+            <button
+              id="send-btn"
+              type="button"
+              aria-label="Enviar mensagem"
+              disabled
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
+            </button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      window.META_PIXEL_ID = '{{ config["META_PIXEL_ID"] }}';
+      if (window.META_PIXEL_ID) {
+        !(function (f, b, e, v, n, t, s) {
+          if (f.fbq) return;
+          n = f.fbq = function () {
+            n.callMethod
+              ? n.callMethod.apply(n, arguments)
+              : n.queue.push(arguments);
+          };
+          if (!f._fbq) f._fbq = n;
+          n.push = n;
+          n.loaded = !0;
+          n.version = "2.0";
+          n.queue = [];
+          t = b.createElement(e);
+          t.async = !0;
+          t.src = "https://connect.facebook.net/en_US/fbevents.js";
+          s = b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t, s);
+        })(window, document, "script");
+
+        try {
+          if (typeof fbq === "function") {
+            fbq("init", window.META_PIXEL_ID);
+            fbq("track", "PageView");
+          }
+        } catch (e) {
+          // falha silenciosa
+        }
+      }
+    </script>
+  </body>
+</html>

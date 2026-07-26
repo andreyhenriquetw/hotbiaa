@@ -1,0 +1,310 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #000;
+}
+
+/* Layout Geral da Tela */
+body.private-page .live-screen {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+/* Vídeo de Fundo */
+body.private-page .bg-video {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  z-index: 1 !important;
+  opacity: 1 !important;
+}
+
+/* Overlay Transparente por Cima do Vídeo */
+body.private-page .ui-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  padding: 12px 14px 14px 14px !important;
+  pointer-events: none;
+}
+
+body.private-page .ui-overlay * {
+  pointer-events: auto;
+}
+
+/* Barra Superior Esquerda */
+body.private-page .top-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+body.private-page .top-bar-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+body.private-page .badge-online {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 3px 7px !important;
+  border-radius: 4px !important;
+  letter-spacing: 0.02em !important;
+}
+
+body.private-page .badge-private {
+  background: #059669 !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 3px 9px !important;
+  border-radius: 999px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  border: none !important;
+}
+
+body.private-page .app-pill {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  padding: 3px 9px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer;
+}
+
+body.private-page .icon-circle {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer;
+}
+
+/* Card da Câmera (Canto Superior Direito) */
+body.private-page .private-camera-button {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: 96px !important;
+  height: 110px !important;
+  min-height: unset !important;
+  max-width: unset !important;
+  background: rgba(22, 22, 28, 0.82) !important;
+  border: 1.5px solid #ec4899 !important;
+  border-radius: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 8px !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow: none !important;
+  z-index: 10 !important;
+}
+
+body.private-page .private-camera-button .camera-icon-wrapper {
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+body.private-page .private-camera-button span {
+  font-size: 9px !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+  color: #9ca3af !important;
+  max-width: 75px !important;
+  font-weight: 600 !important;
+}
+
+/* Botão Flutuante do WhatsApp */
+body.private-page .private-whatsapp-float {
+  position: absolute !important;
+  top: 132px !important;
+  right: 12px !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: 40px !important;
+  height: 40px !important;
+  background: #25d366 !important;
+  border-radius: 50% !important;
+  border: none !important;
+  color: white !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3) !important;
+  z-index: 10 !important;
+}
+
+/* Área de Chat Inferior */
+body.private-page .private-main {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 1 auto !important;
+  margin-top: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+}
+
+body.private-page .chat-area {
+  width: 100% !important;
+  flex: none !important;
+  min-height: 0 !important;
+  max-height: 35vh !important;
+  margin-top: auto !important;
+  padding: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  overflow-y: auto !important;
+}
+
+body.private-page .chat-area::-webkit-scrollbar {
+  display: none !important;
+}
+
+body.private-page .message.assistant {
+  align-self: flex-start !important;
+  max-width: 100% !important;
+}
+
+body.private-page .message.assistant .bubble {
+  background: rgba(0, 0, 0, 0.58) !important;
+  backdrop-filter: blur(12px) !important;
+  border-radius: 18px !important;
+  padding: 12px 16px 14px !important;
+}
+
+body.private-page .message.assistant .sender-name {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #e8836f !important;
+  display: block !important;
+  margin-bottom: 6px !important;
+  letter-spacing: 0.02em !important;
+}
+
+body.private-page .message.assistant .message-text {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+  color: #ffffff !important;
+}
+
+/* Barra de Digitação Fixa */
+body.private-page .input-area {
+  padding: 8px 14px calc(14px + env(safe-area-inset-bottom)) !important;
+  width: 100% !important;
+  flex-shrink: 0 !important;
+}
+
+body.private-page .input-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: rgba(0, 0, 0, 0.58) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-radius: 999px !important;
+  padding: 6px 6px 6px 18px !important;
+  min-height: 52px !important;
+}
+
+body.private-page .input-bar textarea {
+  flex: 1 !important;
+  resize: none !important;
+  border: none !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+  font-family: inherit !important;
+  line-height: 1.4 !important;
+  outline: none !important;
+  max-height: 100px !important;
+  padding: 8px 0 !important;
+}
+
+body.private-page .input-bar textarea::placeholder {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+body.private-page .input-bar button {
+  width: 40px !important;
+  height: 40px !important;
+  border: none !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  display: grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease !important;
+}
+
+body.private-page .input-bar button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+body.private-page .input-bar button:active:not(:disabled) {
+  transform: scale(0.92) !important;
+}
+
+body.private-page .input-bar button:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+}
+
+body.private-page .input-bar button svg {
+  width: 18px !important;
+  height: 18px !important;
+}

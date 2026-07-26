@@ -4,6 +4,7 @@ const INITIAL_ASSISTANT_MESSAGE = "Ei... tem alguém aí pra bater papo? 🙊";
 const VIP_PLAN_PRICES = {
   "vip-completo": "1.00",
   "vip-basico": "12.99",
+  "vip-upgrade-completo": "12.00",
 };
 
 const VIP_BENEFIT_MESSAGES = [
@@ -655,8 +656,6 @@ function createVipPopup() {
       });
   };
 
-  // --- NOVO: Modal de Carregamento "Verificando atividade..." ---
-  // --- Modal de Carregamento "Verificando atividade..." ---
   const showActivityVerificationModal = () => {
     let activityModal = document.getElementById("activity-verification-modal");
 
@@ -796,9 +795,9 @@ function createVipPopup() {
               statusEl.style.color = "#22c55e";
             }
 
-            // Aguarda 1.5 segundos para o usuário ver a confirmação e liberta a página
+            // Aguarda 1.5 segundos para o usuário ver a confirmação e então mostra o conteúdo final.
             setTimeout(() => {
-              unlockPageContent();
+              handleUpgradePaymentConfirmed();
             }, 1500);
           }
         })
@@ -826,6 +825,127 @@ function createVipPopup() {
 
     // OPCIONAL: Salvar no localStorage que a conta/plano já está ativo
     localStorage.setItem("user_access_level", "vip");
+  };
+
+  const hideAllModals = () => {
+    const modals = document.querySelectorAll(
+      "#vip-upgrade-modal, #activity-verification-modal, #security-pix-modal, #payment-success-modal, #vip-popup, #vip-payment-popup, #video-call-payment-popup",
+    );
+    modals.forEach((modal) => modal.classList.remove("visible"));
+    document.body.classList.remove("payment-active");
+  };
+
+  const disableChatInput = (disabled) => {
+    if (userInput) {
+      userInput.disabled = disabled;
+      userInput.placeholder = disabled
+        ? "Chat desativado"
+        : "Converse com a Daniela Lima...";
+      userInput.classList.toggle("disabled", disabled);
+    }
+    if (sendBtn) {
+      sendBtn.disabled = disabled;
+      sendBtn.classList.toggle("disabled", disabled);
+    }
+  };
+
+  const createPostPaymentLoadingOverlay = () => {
+    let overlay = document.getElementById("post-payment-loading-overlay");
+    if (overlay) return overlay;
+
+    overlay = document.createElement("div");
+    overlay.id = "post-payment-loading-overlay";
+    overlay.className = "post-payment-loading-overlay";
+    overlay.innerHTML = `
+      <div class="post-payment-loading-card">
+        <div class="post-payment-loading-spinner"></div>
+        <p>Aguarde um momento para liberar.</p>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    return overlay;
+  };
+
+  const showPostPaymentLoading = (duration = 15000) => {
+    createPostPaymentLoadingOverlay();
+    const overlay = document.getElementById("post-payment-loading-overlay");
+    if (!overlay) return;
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+    disableChatInput(true);
+
+    setTimeout(() => {
+      overlay.classList.remove("visible");
+      window.location.href = "/private";
+    }, duration);
+  };
+
+  const createPostPaymentPageOverlay = () => {
+    let overlay = document.getElementById("post-payment-page-overlay");
+    if (overlay) return overlay;
+
+    overlay = document.createElement("div");
+    overlay.id = "post-payment-page-overlay";
+    overlay.className = "post-payment-page-overlay";
+    overlay.innerHTML = `
+      <div class="post-payment-card">
+        <div class="post-payment-header">
+          <span class="post-payment-badge">ATIVIDADE DETECTADA</span>
+          <h2>Você está no meu privado...</h2>
+        </div>
+        <div class="post-payment-chat-window">
+          <div class="post-payment-chat-bubble assistant">
+            finalmente voce aqui no meu privado, to toda arrepiada te esperando safado.
+          </div>
+        </div>
+        <div class="post-payment-input-block">
+          <textarea disabled placeholder="Chat desativado"></textarea>
+          <button type="button" disabled>Enviar</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    return overlay;
+  };
+
+  const showPostPaymentPage = () => {
+    createPostPaymentPageOverlay();
+    const overlay = document.getElementById("post-payment-page-overlay");
+    if (!overlay) return;
+
+    hideAllModals();
+    disableChatInput(true);
+    document.body.classList.add("post-payment-mode");
+
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    const lastMessage = history[history.length - 1];
+    const finalMessage =
+      "finalmente voce aqui no meu privado, to toda arrepiada te esperando safado.";
+
+    if (!lastMessage || lastMessage.content !== finalMessage) {
+      history.push({ role: "assistant", content: finalMessage });
+      saveHistory(history);
+    }
+  };
+
+  const handleUpgradePaymentConfirmed = () => {
+    if (vipUpgradePollingInterval) {
+      clearInterval(vipUpgradePollingInterval);
+      vipUpgradePollingInterval = null;
+    }
+
+    hideAllModals();
+    hideVipPopup();
+    hideVipButton();
+    hideVideoCallButton();
+
+    markPaymentConfirmed();
+    markPaymentConfirmedNotified();
+    trackPurchase(currentPlanId, getPlanAmount(currentPlanId));
+
+    showPostPaymentLoading(15000);
   };
 
   // --- Polling atualizado para chamar o modal de 10 segundos ao confirmar pagamento ---
@@ -1349,8 +1469,9 @@ function restorePaymentFromStorage() {
 
     if (!state.paymentConfirmedNotified) {
       markPaymentConfirmedNotified();
-      showSecurityPixModal();
     }
+
+    showPostPaymentPage();
     return;
   }
 

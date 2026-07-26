@@ -61,6 +61,19 @@ def index():
     )
 
 
+@app.route("/private")
+def private():
+    return render_template(
+        "private.html",
+        video_url=Config.BACKGROUND_VIDEO_URL,
+        poster_url=Config.BACKGROUND_POSTER_URL,
+        config={
+            "META_PIXEL_ID": Config.META_PIXEL_ID,
+            "CLARITY_PROJECT_ID": Config.CLARITY_PROJECT_ID,
+        },
+    )
+
+
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json(silent=True) or {}
