@@ -6,6 +6,45 @@ from services.pix_service import create_pix_charge, get_pix_status
 from services.pushinpay_service import create_checkout, get_checkout_status
 from services.tracking_service import TrackingService
 
+
+def _trim_history(messages: list[dict], max_pairs: int = None, max_chars: int = None) -> list[dict]:
+    """Trunca o histórico para economizar tokens.
+
+    Estratégia simples:
+    - Mantém no máximo `max_pairs` pares (user+assistant) mais recentes.
+    - Garante que o total de caracteres não exceda `max_chars`, removendo
+      mensagens mais antigas se necessário.
+    - Trunca mensagens individuais muito longas para evitar excessos.
+    """
+    from config import Config
+
+    if max_pairs is None:
+        max_pairs = Config.HISTORY_MAX_PAIRS
+    if max_chars is None:
+        max_chars = Config.HISTORY_MAX_CHARS
+
+    if not messages:
+        return []
+
+    # Keep last max_pairs*2 entries (user+assistant)
+    keep = messages[-(max_pairs * 2) :]
+
+    # Ensure overall length under max_chars by dropping oldest
+    total = sum(len((m.get("content") or "")) for m in keep)
+    while total > max_chars and len(keep) > 1:
+        total -= len((keep[0].get("content") or ""))
+        keep = keep[1:]
+
+    # Truncate any remaining individual messages that are still huge
+    max_individual = max(256, max_chars // 4)
+    for m in keep:
+        c = m.get("content") or ""
+        if len(c) > max_individual:
+            # Keep the most recent part of the message (tail)
+            m["content"] = c[-max_individual:]
+
+    return keep
+
 app = Flask(__name__)
 
 
@@ -44,6 +83,9 @@ def chat():
         ],
         {"role": "user", "content": user_message},
     ]
+
+    # Economiza tokens truncando/sanitizando o histórico antes de enviar
+    messages = _trim_history(messages)
 
     try:
         reply = chat_with_grok(messages)

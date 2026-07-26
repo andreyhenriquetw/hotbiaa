@@ -1255,9 +1255,8 @@ async function sendMessage() {
       throw new Error(data.error || "Não foi possível obter resposta.");
     }
 
-    history.push({ role: "user", content: message });
-    saveHistory(history);
-
+    // Nota: já adicionamos a mensagem do usuário antes do fetch,
+    // não devemos duplicá-la novamente aqui.
     if (data.response && data.response.length > 20) {
       await delay(6000);
     }
