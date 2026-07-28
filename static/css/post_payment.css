@@ -239,6 +239,7 @@ body.private-page .private-whatsapp-float svg {
     align-items: flex-end !important;
     width: auto !important;
     gap: 8px !important;
+    transform: translateY(-30px) !important;
   }
 
   body.private-page .private-camera-button {
@@ -707,7 +708,7 @@ body.private-page .chat-area {
   padding: 14px !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: flex-start !important;
+  justify-content: flex-end !important;
   gap: 10px !important;
   overflow-y: auto !important;
   scroll-behavior: smooth !important;
