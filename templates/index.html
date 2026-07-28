@@ -17,7 +17,6 @@
       href="{{ url_for('static', filename='css/post_payment.css') }}"
     />
 
-    <!-- Meta Pixel Code (3 Pixels Ativos e Disparando Eventos) -->
     <script>
       !(function (f, b, e, v, n, t, s) {
         if (f.fbq) return;
@@ -38,12 +37,10 @@
         s.parentNode.insertBefore(t, s);
       })(window, document, "script");
 
-      // Inicializa os 3 Pixels de forma explicita
       fbq("init", "2332290783966913");
       fbq("init", "37114541764861176");
       fbq("init", "{{ config.get('META_PIXEL_ID') or '2473750989791795' }}");
 
-      // Dispara o evento PageView para registrar "1 evento" nos 3 pixels
       fbq("track", "PageView");
     </script>
     <noscript>
@@ -98,7 +95,7 @@
         <div class="loader-wrapper">
           <div class="loader-ring"></div>
           <div class="loader-text-top">CONECTANDO À LIVE DE</div>
-          <div class="loader-name">Daniela Lima</div>
+          <div class="loader-name">Daniella Lima</div>
           <div class="loader-dots">
             <span></span>
             <span></span>

@@ -1,9 +1,3 @@
-// ============================================================
-//  SISTEMA HOTTRACK + PIX (Versão Corrigida)
-//  – Registro de clique (/api/registerClick)
-//  – Geração de PIX (/api/pix/generate)
-//  – Consulta de status (/api/pix/status) com polling
-// ============================================================
 (function () {
   "use strict";
 
