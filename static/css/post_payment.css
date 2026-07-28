@@ -286,20 +286,21 @@ body.private-page .private-whatsapp-float svg {
 
 .whatsapp-sheet {
   position: relative !important;
-  width: min(420px, 100%) !important;
-  max-width: 420px !important;
+  width: min(380px, 100%) !important;
+  max-width: 380px !important;
   background: rgba(12, 12, 14, 0.96) !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   border-radius: 28px 28px 20px 20px !important;
   overflow: hidden !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.32) !important;
   backdrop-filter: blur(22px) !important;
   transform: translateY(18px) !important;
   transition:
     transform 220ms ease,
     opacity 220ms ease !important;
   margin: 0 auto 4px !important;
-  padding-top: 10px !important;
+  padding-top: 8px !important;
+  max-height: 88vh !important;
 }
 
 .whatsapp-sheet::before {
@@ -441,10 +442,10 @@ body.private-page .private-whatsapp-float svg {
 .whatsapp-card {
   background: rgba(255, 255, 255, 0.03) !important;
   border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
-  padding: 18px 18px 24px !important;
+  padding: 14px 14px 18px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 18px !important;
+  gap: 14px !important;
 }
 
 .whatsapp-message-box {
@@ -543,8 +544,8 @@ body.private-page .private-whatsapp-float svg {
 .whatsapp-payment-body {
   display: flex !important;
   flex-direction: column !important;
-  gap: 14px !important;
-  padding: 16px !important;
+  gap: 12px !important;
+  padding: 14px !important;
 }
 
 .whatsapp-payment-summary {
@@ -561,18 +562,18 @@ body.private-page .private-whatsapp-float svg {
 
 .whatsapp-qr-frame {
   width: 100% !important;
-  min-height: 20px !important;
+  min-height: 140px !important;
   background: rgba(255, 255, 255, 0.04) !important;
   border-radius: 24px !important;
   display: grid !important;
   place-items: center !important;
-  padding: 18px !important;
+  padding: 14px !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
 .whatsapp-qr-frame img {
-  width: min(150px, 100%) !important;
-  max-height: 240px !important;
+  width: min(140px, 100%) !important;
+  max-height: 180px !important;
   border-radius: 18px !important;
   background: #121212 !important;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
@@ -598,21 +599,21 @@ body.private-page .private-whatsapp-float svg {
 
 .whatsapp-pix-code {
   width: 100% !important;
-  padding: 16px !important;
-  border-radius: 18px !important;
+  padding: 12px !important;
+  border-radius: 16px !important;
   background: rgba(255, 255, 255, 0.05) !important;
   color: #ffffff !important;
   font-family: monospace !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
   word-break: break-all !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 .whatsapp-copy-button {
   width: 100% !important;
-  min-height: 52px !important;
+  min-height: 46px !important;
   border: none !important;
-  border-radius: 18px !important;
+  border-radius: 16px !important;
   background: rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
@@ -641,9 +642,9 @@ body.private-page .private-whatsapp-float svg {
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 16px !important;
+  padding: 12px !important;
   background: rgba(255, 255, 255, 0.05) !important;
-  border-radius: 18px !important;
+  border-radius: 16px !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
