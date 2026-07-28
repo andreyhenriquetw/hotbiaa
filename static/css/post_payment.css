@@ -270,7 +270,7 @@ body.private-page .private-whatsapp-float svg {
   }
 
   body.private-page .input-area {
-    padding: 8px 0 0 !important;
+    padding: 10px 0 0 !important;
   }
 }
 
@@ -705,7 +705,7 @@ body.private-page .chat-area {
   min-height: 0 !important;
   max-height: 35vh !important;
   margin-top: auto !important;
-  padding: 14px !important;
+  padding: 8px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-end !important;
