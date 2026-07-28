@@ -1,43 +1,11 @@
 // ============================================================
-//  SISTEMA HOTTRACK + PIX (com 3 pixels Meta fixos)
+//  SISTEMA HOTTRACK + PIX (Versão Corrigida)
 //  – Registro de clique (/api/registerClick)
 //  – Geração de PIX (/api/pix/generate)
 //  – Consulta de status (/api/pix/status) com polling
 // ============================================================
 (function () {
   "use strict";
-
-  if (typeof fbq === "undefined") {
-    var script = document.createElement("script");
-    script.async = true;
-    script.src = "https://connect.facebook.net/en_US/fbevents.js";
-    var firstScript = document.getElementsByTagName("script")[0];
-    firstScript.parentNode.insertBefore(script, firstScript);
-
-    window.fbq = function () {
-      window.fbq.queue
-        ? window.fbq.queue.push(arguments)
-        : console.warn("fbq not ready");
-    };
-    window.fbq.queue = [];
-    window.fbq.loaded = true;
-    window.fbq.version = "2.0";
-  }
-
-  function initPixels() {
-    if (typeof fbq !== "undefined" && fbq.queue) {
-      fbq("init", "2332290783966913");
-      fbq("init", "37114541764861176");
-      fbq("init", "2473750989791795");
-      console.log("✅ 3 pixels Meta inicializados");
-      return true;
-    }
-    return false;
-  }
-
-  if (!initPixels()) {
-    setTimeout(initPixels, 500);
-  }
 
   var CONFIG = {
     API_BASE_URL: "https://hot-track.com",
@@ -105,8 +73,11 @@
       if (!resp.ok) throw new Error("Falha ao registrar clique.");
       var data = await resp.json();
       if (data.click_id) {
-        if (typeof fbq !== "undefined" && !data.pageview_sent_server_side) {
-          fbq("track", "ViewContent", {}, { eventID: data.click_id });
+        if (
+          typeof window.fbq === "function" &&
+          !data.pageview_sent_server_side
+        ) {
+          window.fbq("track", "ViewContent", {}, { eventID: data.click_id });
           console.log("✅ ViewContent enviado (eventID:", data.click_id, ")");
         }
         return data.click_id;
