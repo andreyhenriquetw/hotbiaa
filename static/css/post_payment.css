@@ -52,17 +52,27 @@ body.private-page .ui-overlay * {
 }
 
 /* Barra Superior Esquerda */
+body.private-page .mobile-top-area {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 10px !important;
+}
+
 body.private-page .top-bar {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   width: 100% !important;
+  flex: 1 1 auto !important;
 }
 
 body.private-page .top-bar-left {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
+  flex-wrap: wrap !important;
 }
 
 body.private-page .badge-online {
@@ -115,11 +125,19 @@ body.private-page .icon-circle {
   cursor: pointer;
 }
 
-/* Card da Câmera (Canto Superior Direito) */
+/* Ações rápidas no topo */
+body.private-page .mobile-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 8px !important;
+  z-index: 10 !important;
+}
+
 body.private-page .private-camera-button {
-  position: absolute !important;
-  top: 18px !important;
-  right: 12px !important;
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
   bottom: auto !important;
   left: auto !important;
   width: 96px !important;
@@ -138,7 +156,6 @@ body.private-page .private-camera-button {
   color: #ffffff !important;
   backdrop-filter: blur(8px) !important;
   box-shadow: none !important;
-  z-index: 10 !important;
 }
 
 body.private-page .private-camera-button .camera-icon-wrapper {
@@ -159,11 +176,11 @@ body.private-page .private-camera-button span {
   font-weight: 600 !important;
 }
 
-/* Botão Flutuante do WhatsApp */
+/* Botão flutuante do WhatsApp */
 body.private-page .private-whatsapp-float {
-  position: absolute !important;
-  top: 122px !important;
-  right: 12px !important;
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
   bottom: auto !important;
   left: auto !important;
   min-width: 45px !important;
@@ -177,7 +194,6 @@ body.private-page .private-whatsapp-float {
   align-items: center !important;
   justify-content: center !important;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28) !important;
-  z-index: 10 !important;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease !important;
@@ -192,6 +208,60 @@ body.private-page .private-whatsapp-float svg {
   width: 28px !important;
   height: 28px !important;
   color: white !important;
+}
+
+@media (max-width: 480px) {
+  body.private-page .ui-overlay {
+    padding: 10px 10px 12px !important;
+  }
+
+  body.private-page .mobile-top-area {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  body.private-page .top-bar-left {
+    gap: 4px !important;
+  }
+
+  body.private-page .mobile-actions {
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  body.private-page .private-camera-button {
+    width: 72px !important;
+    height: 72px !important;
+    padding: 6px !important;
+    border-radius: 14px !important;
+  }
+
+  body.private-page .private-camera-button span {
+    font-size: 8px !important;
+    max-width: 62px !important;
+  }
+
+  body.private-page .private-whatsapp-float {
+    min-width: 42px !important;
+    height: 42px !important;
+    padding: 8px !important;
+  }
+
+  body.private-page .private-main {
+    padding: 0 !important;
+  }
+
+  body.private-page .chat-area {
+    max-height: 38vh !important;
+    padding: 10px !important;
+  }
+
+  body.private-page .input-area {
+    padding: 8px 0 0 !important;
+  }
 }
 
 /* WhatsApp POPUP */
@@ -299,7 +369,7 @@ body.private-page .private-whatsapp-float svg {
   }
 
   .whatsapp-qr-frame {
-    min-height: 200px !important;
+    min-height: 100px !important;
     padding: 14px !important;
   }
 
@@ -491,7 +561,7 @@ body.private-page .private-whatsapp-float svg {
 
 .whatsapp-qr-frame {
   width: 100% !important;
-  min-height: 220px !important;
+  min-height: 20px !important;
   background: rgba(255, 255, 255, 0.04) !important;
   border-radius: 24px !important;
   display: grid !important;
@@ -501,7 +571,7 @@ body.private-page .private-whatsapp-float svg {
 }
 
 .whatsapp-qr-frame img {
-  width: min(240px, 100%) !important;
+  width: min(150px, 100%) !important;
   max-height: 240px !important;
   border-radius: 18px !important;
   background: #121212 !important;
