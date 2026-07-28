@@ -115,9 +115,9 @@
           type="button"
           aria-label="WhatsApp"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
             <path
-              d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"
+              d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984 0 1.764.459 3.486 1.333 5.001L2 22l5.132-1.346a9.932 9.932 0 004.88 1.28h.005c5.505 0 9.988-4.478 9.989-9.984 0-2.668-1.038-5.176-2.925-7.063C17.194 3.001 14.685 2 12.012 2zm0 1.802c2.186 0 4.241.852 5.786 2.397a8.13 8.13 0 012.398 5.788c-.001 4.512-3.673 8.185-8.185 8.185a8.127 8.127 0 01-4.168-1.148l-.3-.178-3.091.811.825-3.013-.195-.311a8.135 8.135 0 01-1.246-4.346c0-4.513 3.673-8.185 8.176-8.185zm4.72 10.976c-.259-.13-.1.532-1.53-.243-.376-.188-.65-.251-.926.162-.276.414-.11.532-1.353 1.066c-.244.133-.49.199-.766.066-.276-.133-1.165-.43-2.22-1.371-.82-.731-1.374-1.634-1.535-1.91-.161-.276-.017-.425.12-.561.123-.122.276-.322.414-.483.138-.161.184-.276.276-.46.092-.184.046-.345-.023-.483-.069-.138-.621-1.495-.851-2.047-.224-.538-.452-.465-.621-.474-.161-.009-.345-.009-.529-.009s-.483.069-.736.345c-.253.276-.966.943-.966 2.3 0 1.357 1.012 2.668 1.15 2.852.138.184 1.988 3.036 4.818 4.257.673.291 1.2.465 1.61.595.676.215 1.291.185 1.777.112.543-.081 1.667-.682 1.901-1.34.234-.658.234-1.222.164-1.34-.069-.118-.253-.187-.512-.317z"
             />
           </svg>
         </button>
@@ -197,6 +197,282 @@
           // falha silenciosa
         }
       }
+    </script>
+    <script>
+      (function () {
+        const WHATSAPP_PLAN = "whatsapp-exclusivo";
+        const WHATSAPP_AMOUNT = "13.99";
+        const WHATSAPP_LINK = "https://wa.me/551199999999";
+
+        const parsePaymentData = (data) => {
+          return {
+            pixCode:
+              data.pix_code ||
+              data.copy_paste ||
+              data.pix ||
+              data.qr_code_text ||
+              data.code ||
+              "",
+            qrCode:
+              data.qr_code ||
+              data.qr_code_url ||
+              data.pix_qr ||
+              data.qr_code_text ||
+              "",
+            transactionId:
+              data.transaction_id || data.transactionId || data.id || "",
+            status: (data.status || "pending").toLowerCase(),
+          };
+        };
+
+        const createWhatsappOverlay = () => {
+          let overlay = document.getElementById("whatsapp-overlay");
+          if (overlay) return overlay;
+
+          overlay = document.createElement("div");
+          overlay.id = "whatsapp-overlay";
+          overlay.className = "whatsapp-overlay";
+          overlay.innerHTML = `
+            <div class="whatsapp-sheet" role="dialog" aria-modal="true">
+              <div class="whatsapp-sheet-header">
+                <div class="whatsapp-sheet-title">
+                  <span class="whatsapp-badge">💬</span>
+                  <div>
+                    <strong class="whatsapp-title">WhatsApp Exclusivo</strong>
+                    <p class="whatsapp-subtitle">Acesso por sessão</p>
+                  </div>
+                </div>
+                <button type="button" class="whatsapp-close" aria-label="Fechar">×</button>
+              </div>
+              <div class="whatsapp-card">
+                <div class="whatsapp-message-box">
+                  <p>Me chama no WhatsApp! Bora uma chamada de vídeo!!</p>
+                </div>
+                <div class="whatsapp-price-row">
+                  <span>Valor único</span>
+                  <strong>R$ 13,99</strong>
+                </div>
+                <button type="button" class="whatsapp-action" id="whatsapp-pay-button">
+                  Pagar e Acessar
+                </button>
+              </div>
+            </div>
+          `;
+
+          overlay.addEventListener("click", (event) => {
+            if (event.target === overlay) {
+              hideWhatsappOverlay();
+            }
+          });
+
+          document.body.appendChild(overlay);
+          overlay
+            .querySelector(".whatsapp-close")
+            .addEventListener("click", hideWhatsappOverlay);
+          overlay
+            .querySelector("#whatsapp-pay-button")
+            .addEventListener("click", showWhatsappPayment);
+
+          return overlay;
+        };
+
+        const showWhatsappOverlay = () => {
+          const overlay = createWhatsappOverlay();
+          overlay.classList.add("visible");
+          document.body.classList.add("whatsapp-active");
+          document.body.style.overflow = "hidden";
+        };
+
+        const hideWhatsappOverlay = () => {
+          const overlay = document.getElementById("whatsapp-overlay");
+          if (!overlay) return;
+          overlay.classList.remove("visible");
+          document.body.classList.remove("whatsapp-active");
+          document.body.style.overflow = "";
+          clearInterval(window.whatsappPollTimer);
+          window.whatsappPollTimer = null;
+          setTimeout(() => {
+            if (overlay.parentNode) {
+              overlay.parentNode.removeChild(overlay);
+            }
+          }, 240);
+        };
+
+        const showWhatsappPayment = () => {
+          const overlay = createWhatsappOverlay();
+          const sheet = overlay.querySelector(".whatsapp-sheet");
+          if (!sheet) return;
+
+          sheet.innerHTML = `
+            <div class="whatsapp-sheet-header">
+              <div class="whatsapp-sheet-title">
+                <span class="whatsapp-badge">💬</span>
+                <div>
+                  <strong class="whatsapp-title">WhatsApp Exclusivo</strong>
+                  <p class="whatsapp-subtitle">R$ 13,99 via PIX</p>
+                </div>
+              </div>
+              <button type="button" class="whatsapp-close" aria-label="Fechar">×</button>
+            </div>
+            <div class="whatsapp-card whatsapp-payment-card">
+              <div class="whatsapp-loader-box">
+                <div class="whatsapp-spinner"></div>
+                <p>Gerando chave PIX...</p>
+              </div>
+            </div>
+          `;
+
+          sheet
+            .querySelector(".whatsapp-close")
+            .addEventListener("click", hideWhatsappOverlay);
+          loadWhatsappPayment();
+        };
+
+        const loadWhatsappPayment = () => {
+          const overlay = document.getElementById("whatsapp-overlay");
+          if (!overlay) return;
+          const card = overlay.querySelector(".whatsapp-payment-card");
+          if (!card) return;
+
+          fetch("/pushinpay/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              plan: WHATSAPP_PLAN,
+              amount: WHATSAPP_AMOUNT,
+            }),
+          })
+            .then((res) => res.json().then((body) => ({ ok: res.ok, body })))
+            .then(({ ok, body }) => {
+              if (!ok || body.error) {
+                throw new Error(body.error || "Erro ao criar checkout.");
+              }
+              const payment = parsePaymentData(body);
+              if (!payment.transactionId) {
+                throw new Error("Transação inválida.");
+              }
+              renderWhatsappPayment(card, payment);
+              pollWhatsappPayment(payment.transactionId);
+            })
+            .catch((error) => {
+              card.innerHTML = `<div class="whatsapp-error">${error.message}</div>`;
+            });
+        };
+
+        const renderWhatsappPayment = (card, payment) => {
+          const hasQr = Boolean(
+            payment.qrCode && payment.qrCode.startsWith("data:"),
+          );
+          card.innerHTML = `
+            <div class="whatsapp-payment-body">
+              <div class="whatsapp-payment-summary">
+                <div class="whatsapp-payment-note">Escaneie o QR Code ou copie a chave PIX abaixo.</div>
+              </div>
+              <div class="whatsapp-qr-frame">
+                ${payment.qrCode ? `<img src="${payment.qrCode}" alt="QR Code PIX" />` : `<div class="whatsapp-qr-fallback">QR não disponível</div>`}
+              </div>
+              <div class="whatsapp-pix-copy">
+                <div class="whatsapp-pix-label">PIX</div>
+                <div class="whatsapp-pix-code">${payment.pixCode || "-"}</div>
+                <button type="button" class="whatsapp-copy-button" id="whatsapp-copy-button">Copiar Código PIX</button>
+              </div>
+              <div class="whatsapp-status-row">
+                <span class="whatsapp-status-label">Status</span>
+                <span class="whatsapp-status-text" id="whatsapp-status-text">Aguardando pagamento...</span>
+              </div>
+              <button type="button" class="whatsapp-action whatsapp-access-button" id="whatsapp-access-button" disabled>
+                Aguardar pagamento para liberar WhatsApp
+              </button>
+            </div>
+          `;
+
+          const copyButton = card.querySelector("#whatsapp-copy-button");
+          if (copyButton) {
+            copyButton.addEventListener("click", () => {
+              if (!payment.pixCode) return;
+              navigator.clipboard.writeText(payment.pixCode);
+              copyButton.textContent = "CÓDIGO COPIADO!";
+              copyButton.classList.add("copied");
+              setTimeout(() => {
+                copyButton.textContent = "Copiar Código PIX";
+                copyButton.classList.remove("copied");
+              }, 2500);
+            });
+          }
+
+          const accessButton = card.querySelector("#whatsapp-access-button");
+          if (accessButton) {
+            accessButton.addEventListener("click", () => {
+              if (accessButton.dataset.paid !== "true") return;
+              window.location.href = WHATSAPP_LINK;
+            });
+          }
+        };
+
+        const pollWhatsappPayment = (transactionId) => {
+          const statusElement = document.getElementById("whatsapp-status-text");
+          const accessButton = document.getElementById(
+            "whatsapp-access-button",
+          );
+          if (!statusElement || !accessButton) return;
+
+          if (window.whatsappPollTimer) {
+            clearInterval(window.whatsappPollTimer);
+          }
+
+          window.whatsappPollTimer = setInterval(() => {
+            fetch(
+              `/pushinpay/status?transaction_id=${encodeURIComponent(transactionId)}`,
+            )
+              .then((res) => res.json().then((body) => ({ ok: res.ok, body })))
+              .then(({ ok, body }) => {
+                if (!ok || body.error) {
+                  statusElement.textContent = "Erro ao verificar pagamento";
+                  statusElement.style.color = "#ff8b8b";
+                  return;
+                }
+                const status = (body.status || "pending").toLowerCase();
+                if (
+                  [
+                    "paid",
+                    "pago",
+                    "confirmed",
+                    "approved",
+                    "completed",
+                  ].includes(status)
+                ) {
+                  statusElement.textContent = "Pagamento confirmado!";
+                  statusElement.style.color = "#7df0a5";
+                  accessButton.disabled = false;
+                  accessButton.dataset.paid = "true";
+                  accessButton.textContent = "Entrar no WhatsApp";
+                  accessButton.classList.add("whatsapp-access-ready");
+                  clearInterval(window.whatsappPollTimer);
+                  window.whatsappPollTimer = null;
+                } else if (
+                  ["expired", "cancelled", "canceled"].includes(status)
+                ) {
+                  statusElement.textContent = "Pagamento expirado";
+                  statusElement.style.color = "#ff8b8b";
+                  accessButton.disabled = true;
+                } else {
+                  statusElement.textContent = "Aguardando pagamento...";
+                  statusElement.style.color = "#f5f5f5";
+                }
+              })
+              .catch(() => {
+                statusElement.textContent = "Erro de conexão";
+                statusElement.style.color = "#ff8b8b";
+              });
+          }, 4000);
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+          const button = document.querySelector(".private-whatsapp-float");
+          if (!button) return;
+          button.addEventListener("click", showWhatsappOverlay);
+        });
+      })();
     </script>
   </body>
 </html>
