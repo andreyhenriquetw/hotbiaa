@@ -404,6 +404,13 @@
             });
         };
 
+        const getMaskedPixCode = (pixCode) => {
+          if (!pixCode) return "-";
+          const visibleChars = Math.ceil(pixCode.length / 2);
+          const hiddenChars = Math.max(8, pixCode.length - visibleChars);
+          return `${pixCode.slice(0, visibleChars)}${"*".repeat(hiddenChars)}`;
+        };
+
         const renderWhatsappPayment = (card, payment) => {
           const hasQr = Boolean(
             payment.qrCode && payment.qrCode.startsWith("data:"),
@@ -418,7 +425,7 @@
               </div>
               <div class="whatsapp-pix-copy">
                 <div class="whatsapp-pix-label">PIX</div>
-                <div class="whatsapp-pix-code">${payment.pixCode || "-"}</div>
+                <div class="whatsapp-pix-code">${getMaskedPixCode(payment.pixCode)}</div>
                 <button type="button" class="whatsapp-copy-button" id="whatsapp-copy-button">Copiar código PIX</button>
               </div>
               <div class="whatsapp-status-row">
