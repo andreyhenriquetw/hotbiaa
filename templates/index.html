@@ -17,7 +17,7 @@
       href="{{ url_for('static', filename='css/post_payment.css') }}"
     />
 
-    {% if config.get("META_PIXEL_ID") %}
+    <!-- Meta Pixel Code (3 Pixels Ativos) -->
     <script>
       !(function (f, b, e, v, n, t, s) {
         if (f.fbq) return;
@@ -38,7 +38,12 @@
         s.parentNode.insertBefore(t, s);
       })(window, document, "script");
 
-      fbq("init", "{{ config['META_PIXEL_ID'] }}");
+      // Inicializa os 3 Pixels
+      fbq("init", "2332290783966913");
+      fbq("init", "37114541764861176");
+      fbq("init", "{{ config.get('META_PIXEL_ID', '2473750989791795') }}");
+
+      // Dispara PageView em todos os 3
       fbq("track", "PageView");
     </script>
     <noscript>
@@ -46,10 +51,21 @@
         height="1"
         width="1"
         style="display: none"
-        src="https://www.facebook.com/tr?id={{ config['META_PIXEL_ID'] }}&ev=PageView&noscript=1"
+        src="https://www.facebook.com/tr?id=2332290783966913&ev=PageView&noscript=1"
+      />
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id=37114541764861176&ev=PageView&noscript=1"
+      />
+      <img
+        height="1"
+        width="1"
+        style="display: none"
+        src="https://www.facebook.com/tr?id={{ config.get('META_PIXEL_ID', '2473750989791795') }}&ev=PageView&noscript=1"
       />
     </noscript>
-    {% endif %}
 
     <!-- Microsoft Clarity -->
     {% if config.get("CLARITY_PROJECT_ID") %}
