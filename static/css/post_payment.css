@@ -134,6 +134,14 @@ body.private-page .mobile-actions {
   z-index: 10 !important;
 }
 
+body.private-page .mobile-actions > .private-camera-button {
+  order: 1 !important;
+}
+
+body.private-page .mobile-actions > .private-whatsapp-float {
+  order: 2 !important;
+}
+
 body.private-page .private-camera-button {
   position: static !important;
   top: auto !important;
@@ -226,10 +234,11 @@ body.private-page .private-whatsapp-float svg {
   }
 
   body.private-page .mobile-actions {
-    flex-direction: row !important;
+    flex-direction: column !important;
     justify-content: flex-end !important;
-    align-items: center !important;
-    width: 100% !important;
+    align-items: flex-end !important;
+    width: auto !important;
+    gap: 8px !important;
   }
 
   body.private-page .private-camera-button {
@@ -698,8 +707,11 @@ body.private-page .chat-area {
   padding: 14px !important;
   display: flex !important;
   flex-direction: column !important;
+  justify-content: flex-start !important;
   gap: 10px !important;
   overflow-y: auto !important;
+  scroll-behavior: smooth !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 body.private-page .chat-area::-webkit-scrollbar {
@@ -723,6 +735,7 @@ body.private-page .message.assistant .bubble {
   box-sizing: border-box !important;
   background: rgba(0, 0, 0, 0.58) !important;
   backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   border-radius: 18px !important;
   padding: 12px 16px 14px !important;
   width: fit-content !important;
@@ -776,6 +789,39 @@ body.private-page .input-bar textarea {
   outline: none !important;
   max-height: 100px !important;
   padding: 8px 0 !important;
+}
+
+body.private-page .input-bar textarea::placeholder {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+body.private-page .input-bar button {
+  width: 40px !important;
+  height: 40px !important;
+  border: none !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  display: grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease !important;
+}
+
+body.private-page .input-bar button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+body.private-page .input-bar button:active:not(:disabled) {
+  transform: scale(0.92) !important;
+}
+
+body.private-page .input-bar button svg {
+  width: 18px !important;
+  height: 18px !important;
 }
 
 body.private-page .input-bar textarea::placeholder {
