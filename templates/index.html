@@ -17,7 +17,7 @@
       href="{{ url_for('static', filename='css/post_payment.css') }}"
     />
 
-    <!-- Meta Pixel Code (3 Pixels Ativos) -->
+    <!-- Meta Pixel Code (3 Pixels Ativos e Disparando Eventos) -->
     <script>
       !(function (f, b, e, v, n, t, s) {
         if (f.fbq) return;
@@ -38,12 +38,12 @@
         s.parentNode.insertBefore(t, s);
       })(window, document, "script");
 
-      // Inicializa os 3 Pixels
+      // Inicializa os 3 Pixels de forma explicita
       fbq("init", "2332290783966913");
       fbq("init", "37114541764861176");
-      fbq("init", "{{ config.get('META_PIXEL_ID', '2473750989791795') }}");
+      fbq("init", "{{ config.get('META_PIXEL_ID') or '2473750989791795' }}");
 
-      // Dispara PageView em todos os 3
+      // Dispara o evento PageView para registrar "1 evento" nos 3 pixels
       fbq("track", "PageView");
     </script>
     <noscript>
@@ -63,7 +63,7 @@
         height="1"
         width="1"
         style="display: none"
-        src="https://www.facebook.com/tr?id={{ config.get('META_PIXEL_ID', '2473750989791795') }}&ev=PageView&noscript=1"
+        src="https://www.facebook.com/tr?id={{ config.get('META_PIXEL_ID') or '2473750989791795' }}&ev=PageView&noscript=1"
       />
     </noscript>
 
