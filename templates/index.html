@@ -296,7 +296,7 @@
         var currentPixCode = "";
         var paymentComplete = false;
         var storageKey = "videoPopupState";
-        var paymentAmount = "1.00";
+        var paymentAmount = "19.50";
 
         function formatBRL(value) {
           var number = Number(value);
@@ -425,6 +425,9 @@
           setStatus("✓ Pagamento confirmado!", false);
           copyBtn.disabled = true;
           copyBtn.textContent = "Pagamento realizado!";
+          if (typeof openPaymentSuccessModal === "function") {
+            openPaymentSuccessModal();
+          }
           if (pollingTimer) {
             clearInterval(pollingTimer);
           }
@@ -504,7 +507,7 @@
           window.setTimeout(function () {
             openPopup();
             createPixPayment();
-          }, 30000);
+          }, 180000);
         });
       })();
     </script>
