@@ -38,6 +38,35 @@
     );
   }
 
+  function extractPixCode(data) {
+    var candidates = [
+      data.qr_code_text,
+      data.qr_code,
+      data.pix_code_text,
+      data.pix_code,
+      data.code,
+      data.pix,
+      data.qrcode,
+      data.payload,
+      data.data,
+    ];
+
+    for (var i = 0; i < candidates.length; i++) {
+      if (typeof candidates[i] === "string" && candidates[i].trim()) {
+        return candidates[i].trim();
+      }
+    }
+
+    if (data && typeof data === "object") {
+      var nested = data.result || data.response || data.data || data.payload;
+      if (nested && typeof nested === "object") {
+        return extractPixCode(nested);
+      }
+    }
+
+    return "";
+  }
+
   async function registerClick() {
     try {
       var cookies = getFacebookCookies();
@@ -104,7 +133,11 @@
     var data = await resp.json();
     var txn = data.transaction_id || data.id;
     if (!txn) throw new Error("transaction_id não encontrado");
-    return { qrCodeText: data.qr_code_text, transactionId: txn };
+    return {
+      qrCodeText:
+        data.qr_code_text || data.qr_code || data.pix_code_text || data.code,
+      transactionId: txn,
+    };
   }
 
   async function checkStatus(txnId) {
@@ -121,6 +154,36 @@
     }
   }
 
+  function startPixPolling(txnId) {
+    if (!txnId) {
+      console.warn("transaction_id indisponível; polling não iniciado.");
+      return;
+    }
+
+    var startTime = Date.now();
+    var interval = setInterval(async function () {
+      var status = await checkStatus(txnId);
+      console.log("Status atual:", status);
+
+      if (status === "paid") {
+        alert("✅ Pagamento confirmado! Redirecionando...");
+        clearInterval(interval);
+        return;
+      }
+
+      if (status === "expired") {
+        alert("❌ PIX expirado. Gere um novo.");
+        clearInterval(interval);
+        return;
+      }
+
+      if (Date.now() - startTime > CONFIG.MAX_POLLING_TIME) {
+        alert("⏰ Tempo esgotado. Gere um novo PIX.");
+        clearInterval(interval);
+      }
+    }, CONFIG.POLLING_INTERVAL);
+  }
+
   async function startPixFlow() {
     try {
       if (!storedClickId) {
@@ -133,41 +196,14 @@
       console.log("PIX gerado:", result.qrCodeText);
       console.log("transaction_id:", currentTransactionId);
 
-      alert(
-        "📋 Código PIX:\n\n" +
-          result.qrCodeText +
-          "\n\nAguardando pagamento...",
-      );
-
-      var startTime = Date.now();
-      var finished = false;
-      while (!finished) {
-        await new Promise(function (resolve) {
-          setTimeout(resolve, CONFIG.POLLING_INTERVAL);
-        });
-
-        if (Date.now() - startTime > CONFIG.MAX_POLLING_TIME) {
-          alert("⏰ Tempo esgotado. Gere um novo PIX.");
-          finished = true;
-          break;
-        }
-
-        var status = await checkStatus(currentTransactionId);
-        console.log("Status atual:", status);
-
-        switch (status) {
-          case "paid":
-            alert("✅ Pagamento confirmado! Redirecionando...");
-            finished = true;
-            break;
-          case "expired":
-            alert("❌ PIX expirado. Gere um novo.");
-            finished = true;
-            break;
-          default:
-            break;
-        }
+      var pixCode = extractPixCode(result);
+      if (!pixCode) {
+        console.warn("Resposta da API sem código PIX detectado:", result);
       }
+
+      alert("📋 Código PIX:\n\n" + pixCode + "\n\nAguardando pagamento...");
+
+      startPixPolling(currentTransactionId);
     } catch (err) {
       console.error("Erro no fluxo PIX:", err);
       alert("⚠️ Ocorreu um erro. Tente novamente.");
@@ -178,9 +214,16 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     var pixBtn = document.getElementById("pix-btn");
-    if (!pixBtn) return;
-    pixBtn.addEventListener("click", function () {
+    if (pixBtn) {
+      pixBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        startPixFlow();
+      });
+      return;
+    }
+
+    window.setTimeout(function () {
       startPixFlow();
-    });
+    }, 1000);
   });
 })();
