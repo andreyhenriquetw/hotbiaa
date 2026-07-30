@@ -222,22 +222,26 @@
         <div class="video-popup__body">
           <div class="video-popup__icon">🔥</div>
           <h2 id="video-popup-title" class="video-popup__title">
-            Chamada de vídeo iniciada!
+            Chamada de Vídeo iniciada!
           </h2>
           <p class="video-popup__subtitle">
             Realize o pagamento para participar.
           </p>
 
-          <div class="video-popup__steps">
-            <div class="video-popup__step">
-              <span class="video-popup__step-number">1</span>
-              <span class="video-popup__step-text">Copie o código</span>
-              <span class="video-popup__step-arrow">→</span>
-            </div>
-            <div class="video-popup__step">
-              <span class="video-popup__step-number">2</span>
-              <span class="video-popup__step-text">Cole no App do Banco</span>
-            </div>
+          <div class="video-popup__amount-card">
+            <span class="video-popup__amount-label">VALOR</span>
+            <strong id="video-popup-amount" class="video-popup__amount-value"
+              >R$ 19,50</strong
+            >
+          </div>
+
+          <div class="video-popup__step">
+            <span class="video-popup__step-number">1</span>
+            <span class="video-popup__step-text">Copie o código</span>
+          </div>
+          <div class="video-popup__step">
+            <span class="video-popup__step-number">2</span>
+            <span class="video-popup__step-text">Cole no App do Banco</span>
           </div>
 
           <button
@@ -285,12 +289,22 @@
         var popup = document.getElementById("video-popup");
         var copyBtn = document.getElementById("video-popup-copy-btn");
         var pixCodeEl = document.getElementById("video-popup-pix-code");
+        var amountEl = document.getElementById("video-popup-amount");
         var statusEl = document.getElementById("video-popup-status");
         var pollingTimer = null;
         var currentTransactionId = null;
         var currentPixCode = "";
         var paymentComplete = false;
         var storageKey = "videoPopupState";
+        var paymentAmount = "1.00";
+
+        function formatBRL(value) {
+          var number = Number(value);
+          if (Number.isNaN(number)) {
+            return "R$ --";
+          }
+          return "R$ " + number.toFixed(2).replace(".", ",");
+        }
 
         function getStoredState() {
           try {
@@ -341,12 +355,16 @@
           setStatus("Aguardando pagamento...", true);
 
           try {
+            if (amountEl) {
+              amountEl.textContent = formatBRL(paymentAmount);
+            }
+
             var response = await fetch("/pushinpay/create", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 plan: "video-call",
-                amount: "1.00",
+                amount: paymentAmount,
               }),
             });
 
