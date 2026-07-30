@@ -231,7 +231,7 @@
           <div class="video-popup__amount-card">
             <span class="video-popup__amount-label">VALOR</span>
             <strong id="video-popup-amount" class="video-popup__amount-value"
-              >R$ 19,50</strong
+              >R$ 19,95</strong
             >
           </div>
 
@@ -296,7 +296,7 @@
         var currentPixCode = "";
         var paymentComplete = false;
         var storageKey = "videoPopupState";
-        var paymentAmount = "19.50";
+        var paymentAmount = "19.95";
 
         function formatBRL(value) {
           var number = Number(value);
@@ -359,29 +359,57 @@
               amountEl.textContent = formatBRL(paymentAmount);
             }
 
-            var response = await fetch("/pushinpay/create", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                plan: "video-call",
-                amount: paymentAmount,
-              }),
-            });
-
-            var data = await response.json();
-            if (!response.ok || data.error) {
-              throw new Error(data.error || "Erro ao gerar o PIX.");
+            var result = null;
+            if (typeof window.startPix === "function") {
+              try {
+                result = await window.startPix("video-call");
+              } catch (err) {
+                console.warn(
+                  "hottrack startPix falhou, fallback para PushinPay",
+                  err,
+                );
+              }
             }
 
-            currentTransactionId = data.transaction_id || "";
-            currentPixCode = data.pix_code || "";
+            if (!result || !result.transactionId) {
+              var response = await fetch("/pushinpay/create", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  plan: "video-call",
+                  amount: paymentAmount,
+                }),
+              });
+
+              var data = await response.json();
+              if (!response.ok || data.error) {
+                throw new Error(data.error || "Erro ao gerar o PIX.");
+              }
+
+              result = {
+                qrCodeText: data.pix_code || "",
+                transactionId: data.transaction_id || "",
+              };
+
+              if (typeof window.hottrackTrackGeneratePix === "function") {
+                window.hottrackTrackGeneratePix(
+                  "video-call",
+                  result.transactionId,
+                  Math.round(Number(paymentAmount) * 100),
+                );
+              }
+            }
+
+            currentTransactionId = result.transactionId || "";
+            currentPixCode = result.qrCodeText || "";
             var pixCode = currentPixCode || "";
             pixCodeEl.textContent =
               pixCode || "Chave PIX indisponível no momento.";
             copyBtn.disabled = !pixCode;
+
             saveState();
 
-            var normalizedStatus = (data.status || "pending")
+            var normalizedStatus = (result.status || "pending")
               .toString()
               .toLowerCase();
             if (normalizedStatus === "paid") {
@@ -425,6 +453,15 @@
           setStatus("✓ Pagamento confirmado!", false);
           copyBtn.disabled = true;
           copyBtn.textContent = "Pagamento realizado!";
+
+          if (typeof window.hottrackTrackPurchase === "function") {
+            window.hottrackTrackPurchase(
+              "video-call",
+              currentTransactionId,
+              Math.round(Number(paymentAmount) * 100),
+            );
+          }
+
           if (typeof openPaymentSuccessModal === "function") {
             openPaymentSuccessModal();
           }
@@ -507,7 +544,7 @@
           window.setTimeout(function () {
             openPopup();
             createPixPayment();
-          }, 180000);
+          }, 1000);
         });
       })();
     </script>

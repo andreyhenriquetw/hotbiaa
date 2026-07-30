@@ -21,6 +21,8 @@
 
   var storedClickId = null;
   var currentTransactionId = null;
+  var currentPlanId = null;
+  var currentValueCents = null;
 
   function getQueryParam(p) {
     return new URLSearchParams(location.search).get(p);
@@ -167,6 +169,88 @@
     }
   }
 
+  function sendTrackingEvent(eventName, payload) {
+    if (typeof window.fbq === "function") {
+      if (eventName === "PageView") {
+        window.fbq("track", "PageView");
+      }
+      if (eventName === "Purchase") {
+        window.fbq("track", "Purchase", {
+          value: payload.value || 0,
+          currency: payload.currency || "BRL",
+        });
+      }
+    }
+
+    fetch("/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event_name: eventName, payload: payload }),
+    }).catch(function () {
+      console.warn("Falha ao enviar evento de rastreamento", eventName);
+    });
+  }
+
+  function trackPurchase(planId, valueCents) {
+    var value = typeof valueCents === "number" ? valueCents / 100 : 0;
+    sendTrackingEvent("Purchase", {
+      page: "purchase",
+      page_url: window.location.href,
+      plan_id: planId,
+      value: value,
+      currency: "BRL",
+    });
+  }
+
+  function trackGeneratePix(planId, valueCents, transactionId) {
+    var value = typeof valueCents === "number" ? valueCents / 100 : 0;
+    if (typeof window.fbq === "function") {
+      window.fbq("track", "InitiateCheckout", {
+        value: value,
+        currency: "BRL",
+      });
+    }
+    sendTrackingEvent("GeneratePix", {
+      page: "generate_pix",
+      page_url: window.location.href,
+      plan_id: planId,
+      transaction_id: transactionId,
+      value: value,
+      currency: "BRL",
+    });
+  }
+
+  function trackPurchase(planId, valueCents, transactionId) {
+    var value = typeof valueCents === "number" ? valueCents / 100 : 0;
+    var payload = {
+      page: "purchase",
+      page_url: window.location.href,
+      plan_id: planId,
+      value: value,
+      currency: "BRL",
+    };
+    if (transactionId) {
+      payload.transaction_id = transactionId;
+    }
+    sendTrackingEvent("Purchase", payload);
+  }
+
+  window.hottrackTrackGeneratePix = function (
+    planId,
+    transactionId,
+    valueCents,
+  ) {
+    currentPlanId = planId;
+    currentValueCents = valueCents;
+    trackGeneratePix(planId, valueCents, transactionId);
+  };
+
+  window.hottrackTrackPurchase = function (planId, transactionId, valueCents) {
+    currentPlanId = planId;
+    currentValueCents = valueCents;
+    trackPurchase(planId, valueCents, transactionId);
+  };
+
   function startPixPolling(txnId) {
     if (!txnId) {
       console.warn("transaction_id indisponível; polling não iniciado.");
@@ -181,6 +265,7 @@
       if (status === "paid") {
         console.log("✅ Pagamento confirmado");
         clearInterval(interval);
+        trackPurchase(currentPlanId, currentValueCents);
         return;
       }
 
@@ -205,25 +290,28 @@
       }
 
       planId = planId || "vip-completo";
+      currentPlanId = planId;
+      currentValueCents =
+        CONFIG.PLAN_PRICES[planId] || CONFIG.PLAN_PRICES["vip-completo"];
+
       var result = await generatePix(storedClickId, planId);
       currentTransactionId = result.transactionId;
       console.log("PIX gerado:", result.qrCodeText);
       console.log("transaction_id:", currentTransactionId);
+
+      trackGeneratePix(currentPlanId, currentValueCents, currentTransactionId);
 
       var pixCode = extractPixCode(result);
       if (!pixCode) {
         console.warn("Resposta da API sem código PIX detectado:", result);
       }
 
-      if (pixCode && navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(pixCode).catch(function () {
-          console.warn("Não foi possível copiar o PIX automaticamente.");
-        });
-      }
-
+      // não copia automaticamente para evitar prompt de permissão ao cliente
       startPixPolling(currentTransactionId);
+      return result;
     } catch (err) {
       console.error("Erro no fluxo PIX:", err);
+      throw err;
     }
   }
 
