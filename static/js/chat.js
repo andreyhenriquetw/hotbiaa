@@ -3,7 +3,7 @@ const ASSISTANT_INITIAL = "D";
 const INITIAL_ASSISTANT_MESSAGE = "Ei... tem alguém aí pra bater papo? 🙊";
 const VIP_PLAN_PRICES = {
   "vip-completo": "19.99",
-  "vip-basico": "12.99",
+  "vip-basico": "12.98",
   "vip-upgrade-completo": "12.00",
 };
 
