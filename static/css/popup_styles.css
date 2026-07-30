@@ -22,9 +22,9 @@
   font-size: 28px;
   text-align: center;
   margin: 0 auto 12px;
-  width: 72px;
-  height: 72px;
-  line-height: 72px;
+  width: 52px;
+  height: 52px;
+  line-height: 52px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
@@ -57,7 +57,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
   padding: 16px 18px;
-  margin: 0 auto 18px;
+  margin: 0 auto 5px;
   max-width: 320px;
 }
 
@@ -86,10 +86,10 @@
 .video-popup__step {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.9);
-  padding: 10px 0;
+  padding: 5px 0;
 }
 
 .video-popup__step:first-child {
