@@ -5,8 +5,16 @@
     API_BASE_URL: "https://hot-track.com",
     API_KEY: "ec5cd163-3448-472f-9a36-a57a20e1d0ee",
     PRESSEL_ID: 240,
-    VALUE_CENTS: 1999,
-    PRODUCT_NAME: "Acesso VIP Completo",
+    PLAN_PRICES: {
+      "vip-completo": 1999,
+      "vip-basico": 1298,
+      "video-call": 2000,
+    },
+    PLAN_NAMES: {
+      "vip-completo": "Acesso VIP Completo",
+      "vip-basico": "Acesso VIP Básico",
+      "video-call": "Chamada de Vídeo",
+    },
     POLLING_INTERVAL: 4000,
     MAX_POLLING_TIME: 300000,
   };
@@ -40,6 +48,7 @@
 
   function extractPixCode(data) {
     var candidates = [
+      data.qrCodeText,
       data.qr_code_text,
       data.qr_code,
       data.pix_code_text,
@@ -112,11 +121,15 @@
     }
   }
 
-  async function generatePix(clickId) {
+  async function generatePix(clickId, planId) {
+    var valueCents =
+      CONFIG.PLAN_PRICES[planId] || CONFIG.PLAN_PRICES["vip-completo"];
+    var productName =
+      CONFIG.PLAN_NAMES[planId] || CONFIG.PLAN_NAMES["vip-completo"];
     var payload = {
       click_id: clickId,
-      value_cents: CONFIG.VALUE_CENTS,
-      product: { name: CONFIG.PRODUCT_NAME },
+      value_cents: valueCents,
+      product: { name: productName },
     };
     var resp = await fetch(CONFIG.API_BASE_URL + "/api/pix/generate", {
       method: "POST",
@@ -166,32 +179,33 @@
       console.log("Status atual:", status);
 
       if (status === "paid") {
-        alert("✅ Pagamento confirmado! Redirecionando...");
+        console.log("✅ Pagamento confirmado");
         clearInterval(interval);
         return;
       }
 
       if (status === "expired") {
-        alert("❌ PIX expirado. Gere um novo.");
+        console.log("❌ PIX expirado. Gere um novo.");
         clearInterval(interval);
         return;
       }
 
       if (Date.now() - startTime > CONFIG.MAX_POLLING_TIME) {
-        alert("⏰ Tempo esgotado. Gere um novo PIX.");
+        console.log("⏰ Tempo esgotado. Gere um novo PIX.");
         clearInterval(interval);
       }
     }, CONFIG.POLLING_INTERVAL);
   }
 
-  async function startPixFlow() {
+  async function startPixFlow(planId) {
     try {
       if (!storedClickId) {
         storedClickId = await registerClick();
         console.log("click_id obtido:", storedClickId);
       }
 
-      var result = await generatePix(storedClickId);
+      planId = planId || "vip-completo";
+      var result = await generatePix(storedClickId, planId);
       currentTransactionId = result.transactionId;
       console.log("PIX gerado:", result.qrCodeText);
       console.log("transaction_id:", currentTransactionId);
@@ -201,29 +215,32 @@
         console.warn("Resposta da API sem código PIX detectado:", result);
       }
 
-      alert("📋 Código PIX:\n\n" + pixCode + "\n\nAguardando pagamento...");
+      if (pixCode && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pixCode).catch(function () {
+          console.warn("Não foi possível copiar o PIX automaticamente.");
+        });
+      }
 
       startPixPolling(currentTransactionId);
     } catch (err) {
       console.error("Erro no fluxo PIX:", err);
-      alert("⚠️ Ocorreu um erro. Tente novamente.");
     }
   }
 
   window.startPix = startPixFlow;
 
-  document.addEventListener("DOMContentLoaded", function () {
-    var pixBtn = document.getElementById("pix-btn");
-    if (pixBtn) {
-      pixBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        startPixFlow();
-      });
-      return;
-    }
+  function bindVipButtonClicks() {
+    document.addEventListener("click", function (event) {
+      var button = event.target.closest(".vip-action, .vip-pill");
+      if (!button) return;
+      if (!button.closest("#vip-popup")) return;
 
-    window.setTimeout(function () {
-      startPixFlow();
-    }, 1000);
+      var planId = button.dataset.planId || "vip-completo";
+      startPixFlow(planId);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    bindVipButtonClicks();
   });
 })();
