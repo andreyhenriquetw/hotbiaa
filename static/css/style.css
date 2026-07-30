@@ -389,6 +389,221 @@ body {
   }
 }
 
+.video-popup {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+
+.video-popup.is-open {
+  display: flex;
+}
+
+.video-popup__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.video-popup__dialog {
+  position: relative;
+  width: min(100%, 420px);
+  background: linear-gradient(180deg, #23111e 0%, #14090f 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  padding: 24px 20px 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  color: var(--text-white);
+  z-index: 1;
+  animation: fadeUp 0.25s ease;
+}
+
+.video-popup__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-white);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.video-popup__header {
+  margin-bottom: 12px;
+}
+
+.video-popup__badge {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  background: rgba(232, 131, 111, 0.18);
+  border: 1px solid rgba(232, 131, 111, 0.36);
+  border-radius: 999px;
+  color: #ffb9a7;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.video-popup h2 {
+  font-size: 24px;
+  margin-bottom: 6px;
+  line-height: 1.15;
+}
+
+.video-popup__lead,
+.video-popup__hint {
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.5;
+  font-size: 15px;
+}
+
+.video-popup__amount-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 16px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 15px;
+}
+
+.video-popup__amount-pill strong {
+  color: #ffbba8;
+  font-weight: 800;
+}
+
+.video-popup__pix-box {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 14px;
+  margin-top: 8px;
+}
+
+.video-popup__pix-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.video-popup__pix-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.video-popup__pix-hint {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.video-popup__pix-code {
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-all;
+  letter-spacing: 0.12em;
+  color: #fff6f2;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.video-popup__copy-btn {
+  margin-top: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, #b53d8f 0%, #e07d69 100%);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(181, 61, 143, 0.28);
+}
+
+.video-popup__copy-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.video-popup__status-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.video-popup__status-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.video-popup__status-value {
+  font-weight: 700;
+  color: #ffd1b8;
+}
+
+.video-popup__status-value.is-paid {
+  color: #62f07b;
+}
+
+.video-popup__status-value.is-pending {
+  color: #ffd1b8;
+}
+
+.video-popup__status-value.is-error {
+  color: #ff8a8a;
+}
+
+.video-popup__status-value.is-loading {
+  color: #ffd1b8;
+}
+
+@media (max-width: 480px) {
+  .video-popup__dialog {
+    padding: 20px 16px 18px;
+  }
+
+  .video-popup h2 {
+    font-size: 20px;
+  }
+
+  .video-popup__pix-code {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+}
+
 @media (min-width: 481px) {
   body {
     background: #111;

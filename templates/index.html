@@ -16,6 +16,10 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/post_payment.css') }}"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/popup_styles.css') }}"
+    />
 
     <script>
       !(function (f, b, e, v, n, t, s) {
@@ -205,6 +209,287 @@
       </div>
     </div>
 
+    <div id="video-popup" class="video-popup" aria-hidden="true">
+      <div class="video-popup__backdrop"></div>
+      <div
+        class="video-popup__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="video-popup-title"
+      >
+        <div class="video-popup__banner">🔴 PAGAMENTO PENDENTE</div>
+
+        <div class="video-popup__body">
+          <div class="video-popup__icon">🔥</div>
+          <h2 id="video-popup-title" class="video-popup__title">
+            Chamada de vídeo iniciada!
+          </h2>
+          <p class="video-popup__subtitle">
+            Realize o pagamento para participar.
+          </p>
+
+          <div class="video-popup__steps">
+            <div class="video-popup__step">
+              <span class="video-popup__step-number">1</span>
+              <span class="video-popup__step-text">Copie o código</span>
+              <span class="video-popup__step-arrow">→</span>
+            </div>
+            <div class="video-popup__step">
+              <span class="video-popup__step-number">2</span>
+              <span class="video-popup__step-text">Cole no App do Banco</span>
+            </div>
+          </div>
+
+          <button
+            id="video-popup-copy-btn"
+            class="video-popup__copy-btn"
+            type="button"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              style="margin-right: 8px"
+            >
+              <path
+                d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+              />
+            </svg>
+            CLIQUE PARA COPIAR O PIX
+          </button>
+
+          <div
+            class="video-popup__pix-code"
+            id="video-popup-pix-code"
+            style="display: none"
+          >
+            Gerando chave PIX...
+          </div>
+
+          <div class="video-popup__status">
+            <span class="video-popup__status-dot">●</span>
+            <span
+              id="video-popup-status"
+              class="video-popup__status-text is-loading"
+            >
+              Aguardando pagamento...
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var popup = document.getElementById("video-popup");
+        var copyBtn = document.getElementById("video-popup-copy-btn");
+        var pixCodeEl = document.getElementById("video-popup-pix-code");
+        var statusEl = document.getElementById("video-popup-status");
+        var pollingTimer = null;
+        var currentTransactionId = null;
+        var currentPixCode = "";
+        var paymentComplete = false;
+        var storageKey = "videoPopupState";
+
+        function getStoredState() {
+          try {
+            return JSON.parse(localStorage.getItem(storageKey) || "{}");
+          } catch (error) {
+            return {};
+          }
+        }
+
+        function saveState() {
+          localStorage.setItem(
+            storageKey,
+            JSON.stringify({
+              paymentComplete: paymentComplete,
+              transactionId: currentTransactionId || "",
+              pixCode: currentPixCode || "",
+            }),
+          );
+        }
+
+        function setStatus(text, isLoading) {
+          statusEl.textContent = text;
+          statusEl.className = "video-popup__status-text";
+          if (isLoading) {
+            statusEl.classList.add("is-loading");
+          } else {
+            statusEl.classList.add("is-complete");
+          }
+        }
+
+        function openPopup() {
+          popup.classList.add("is-open");
+          popup.setAttribute("aria-hidden", "false");
+        }
+
+        function closePopup() {
+          if (!paymentComplete) {
+            return;
+          }
+          popup.classList.remove("is-open");
+          popup.setAttribute("aria-hidden", "true");
+          localStorage.removeItem(storageKey);
+        }
+
+        async function createPixPayment() {
+          copyBtn.disabled = true;
+          pixCodeEl.textContent = "Gerando chave PIX...";
+          setStatus("Aguardando pagamento...", true);
+
+          try {
+            var response = await fetch("/pushinpay/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                plan: "video-call",
+                amount: "1.00",
+              }),
+            });
+
+            var data = await response.json();
+            if (!response.ok || data.error) {
+              throw new Error(data.error || "Erro ao gerar o PIX.");
+            }
+
+            currentTransactionId = data.transaction_id || "";
+            currentPixCode = data.pix_code || "";
+            var pixCode = currentPixCode || "";
+            pixCodeEl.textContent =
+              pixCode || "Chave PIX indisponível no momento.";
+            copyBtn.disabled = !pixCode;
+            saveState();
+
+            var normalizedStatus = (data.status || "pending")
+              .toString()
+              .toLowerCase();
+            if (normalizedStatus === "paid") {
+              handlePaymentSuccess();
+            } else {
+              setStatus("Aguardando pagamento...", true);
+            }
+
+            if (currentTransactionId) {
+              startStatusPolling(currentTransactionId);
+            }
+          } catch (error) {
+            pixCodeEl.textContent = "Não foi possível gerar o PIX.";
+            setStatus("Erro ao gerar PIX", true);
+            console.error(error);
+          }
+        }
+
+        async function checkPaymentStatus(transactionId) {
+          if (!transactionId) return null;
+
+          try {
+            var response = await fetch(
+              "/pushinpay/status?transaction_id=" +
+                encodeURIComponent(transactionId),
+            );
+            var data = await response.json();
+            if (!response.ok || data.error) {
+              throw new Error(data.error || "Erro ao consultar status.");
+            }
+            return data.status || null;
+          } catch (error) {
+            console.error(error);
+            return null;
+          }
+        }
+
+        function handlePaymentSuccess() {
+          paymentComplete = true;
+          saveState();
+          setStatus("✓ Pagamento confirmado!", false);
+          copyBtn.disabled = true;
+          copyBtn.textContent = "Pagamento realizado!";
+          if (pollingTimer) {
+            clearInterval(pollingTimer);
+          }
+          setTimeout(closePopup, 2000);
+        }
+
+        function startStatusPolling(transactionId) {
+          if (pollingTimer) {
+            clearInterval(pollingTimer);
+          }
+
+          async function poll() {
+            var status = await checkPaymentStatus(transactionId);
+            if (!status) return;
+
+            if (status === "paid") {
+              handlePaymentSuccess();
+              return;
+            }
+
+            setStatus("Aguardando pagamento...", true);
+          }
+
+          poll();
+          pollingTimer = setInterval(poll, 5000);
+        }
+
+        copyBtn.addEventListener("click", async function () {
+          var pixText = currentPixCode || "";
+          if (
+            !pixText ||
+            pixText.includes("Gerando") ||
+            pixText.includes("indisponível") ||
+            pixText.includes("Não foi possível")
+          ) {
+            return;
+          }
+
+          try {
+            await navigator.clipboard.writeText(pixText);
+            copyBtn.textContent = "✓ PIX Copiado!";
+            setTimeout(function () {
+              copyBtn.textContent = "CLIQUE PARA COPIAR O PIX";
+            }, 1800);
+          } catch (error) {
+            console.error("Erro ao copiar o PIX:", error);
+          }
+        });
+
+        popup.addEventListener("click", function (event) {
+          if (event.target === popup && paymentComplete) {
+            closePopup();
+          }
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+          var savedState = getStoredState();
+          if (savedState.paymentComplete) {
+            return;
+          }
+
+          if (savedState.transactionId || savedState.pixCode) {
+            currentTransactionId = savedState.transactionId || "";
+            currentPixCode = savedState.pixCode || "";
+            pixCodeEl.textContent =
+              currentPixCode || "Chave PIX indisponível no momento.";
+            copyBtn.disabled = !currentPixCode;
+            copyBtn.textContent = "CLIQUE PARA COPIAR O PIX";
+            setStatus("Aguardando pagamento...", true);
+            openPopup();
+            if (currentTransactionId) {
+              startStatusPolling(currentTransactionId);
+            }
+            return;
+          }
+
+          window.setTimeout(function () {
+            openPopup();
+            createPixPayment();
+          }, 30000);
+        });
+      })();
+    </script>
     <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
     <script src="{{ url_for('static', filename='js/hottrack_pix.js') }}"></script>
