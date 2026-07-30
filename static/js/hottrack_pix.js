@@ -8,11 +8,17 @@
     PLAN_PRICES: {
       "vip-completo": 1999,
       "vip-basico": 1298,
+      "vip-upgrade-completo": 1200,
+      "verificacao-seguranca": 990,
+      "vip-1399": 1399,
       "video-call": 2000,
     },
     PLAN_NAMES: {
       "vip-completo": "Acesso VIP Completo",
       "vip-basico": "Acesso VIP Básico",
+      "vip-upgrade-completo": "Upgrade VIP Completo",
+      "verificacao-seguranca": "Verificação de Segurança",
+      "vip-1399": "VIP 13,99",
       "video-call": "Chamada de Vídeo",
     },
     POLLING_INTERVAL: 4000,

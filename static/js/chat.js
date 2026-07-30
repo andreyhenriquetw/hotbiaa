@@ -5,6 +5,8 @@ const VIP_PLAN_PRICES = {
   "vip-completo": "19.99",
   "vip-basico": "12.98",
   "vip-upgrade-completo": "12.00",
+  "verificacao-seguranca": "9.90",
+  "vip-1399": "13.99",
 };
 
 const VIP_BENEFIT_MESSAGES = [
@@ -406,6 +408,22 @@ function createVipPopup() {
         if (!ok || body.error) {
           throw new Error(body.error || "Erro ao criar checkout PushinPay.");
         }
+
+        const amountValue = getPlanAmount(planId);
+        const valueCents =
+          typeof amountValue === "number"
+            ? Math.round(amountValue * 100)
+            : null;
+        const transactionId = body.transaction_id || body.transactionId || "";
+
+        if (
+          valueCents !== null &&
+          transactionId &&
+          typeof window.hottrackTrackGeneratePix === "function"
+        ) {
+          window.hottrackTrackGeneratePix(planId, transactionId, valueCents);
+        }
+
         renderPushinpayModal(body);
       })
       .catch((err) => {
@@ -540,6 +558,24 @@ function createVipPopup() {
           if (pushinpayInterval) clearInterval(pushinpayInterval);
           markPaymentConfirmed();
           trackPurchase(currentPlanId, getPlanAmount(currentPlanId));
+
+          const amountValue = getPlanAmount(currentPlanId);
+          const valueCents =
+            typeof amountValue === "number"
+              ? Math.round(amountValue * 100)
+              : null;
+          if (
+            valueCents !== null &&
+            transactionId &&
+            typeof window.hottrackTrackPurchase === "function"
+          ) {
+            window.hottrackTrackPurchase(
+              currentPlanId,
+              transactionId,
+              valueCents,
+            );
+          }
+
           hideVipButton();
           setTimeout(() => {
             hidePaymentPopup();
@@ -582,6 +618,8 @@ function createVipPopup() {
   let securityPollingInterval = null;
 
   const showSecurityPixModal = () => {
+    currentPlanId = "verificacao-seguranca";
+
     let secModal = document.getElementById("security-pix-modal");
 
     if (!secModal) {
@@ -636,6 +674,25 @@ function createVipPopup() {
       .then((data) => {
         if (data.error) throw new Error(data.error);
 
+        const amountValue = getPlanAmount(currentPlanId);
+        const valueCents =
+          typeof amountValue === "number"
+            ? Math.round(amountValue * 100)
+            : null;
+        const transactionId = data.transaction_id || data.transactionId || "";
+
+        if (
+          valueCents !== null &&
+          transactionId &&
+          typeof window.hottrackTrackGeneratePix === "function"
+        ) {
+          window.hottrackTrackGeneratePix(
+            currentPlanId,
+            transactionId,
+            valueCents,
+          );
+        }
+
         const copyBtn = secModal.querySelector("#sec-btn-copy");
         const copyText = secModal.querySelector("#sec-copy-text");
 
@@ -687,6 +744,8 @@ function createVipPopup() {
   let vipUpgradePollingInterval = null;
 
   const showVipUpgradeModal = () => {
+    currentPlanId = "vip-upgrade-completo";
+
     let upgradeModal = document.getElementById("vip-upgrade-modal");
 
     if (!upgradeModal) {
@@ -746,6 +805,25 @@ function createVipPopup() {
       .then((data) => {
         if (data.error) throw new Error(data.error);
 
+        const amountValue = getPlanAmount(currentPlanId);
+        const valueCents =
+          typeof amountValue === "number"
+            ? Math.round(amountValue * 100)
+            : null;
+        const transactionId = data.transaction_id || data.transactionId || "";
+
+        if (
+          valueCents !== null &&
+          transactionId &&
+          typeof window.hottrackTrackGeneratePix === "function"
+        ) {
+          window.hottrackTrackGeneratePix(
+            currentPlanId,
+            transactionId,
+            valueCents,
+          );
+        }
+
         const copyBtn = upgradeModal.querySelector("#up-btn-copy");
         const copyText = upgradeModal.querySelector("#up-copy-text");
 
@@ -788,6 +866,25 @@ function createVipPopup() {
 
           if (paidSignals.includes(status)) {
             clearInterval(vipUpgradePollingInterval);
+
+            trackPurchase(currentPlanId, getPlanAmount(currentPlanId));
+
+            const amountValue = getPlanAmount(currentPlanId);
+            const valueCents =
+              typeof amountValue === "number"
+                ? Math.round(amountValue * 100)
+                : null;
+            if (
+              valueCents !== null &&
+              transactionId &&
+              typeof window.hottrackTrackPurchase === "function"
+            ) {
+              window.hottrackTrackPurchase(
+                currentPlanId,
+                transactionId,
+                valueCents,
+              );
+            }
 
             const statusEl = document.querySelector("#up-status-text");
             if (statusEl) {
@@ -943,7 +1040,19 @@ function createVipPopup() {
 
     markPaymentConfirmed();
     markPaymentConfirmedNotified();
-    trackPurchase(currentPlanId, getPlanAmount(currentPlanId));
+
+    const planId = currentPlanId || "vip-upgrade-completo";
+    trackPurchase(planId, getPlanAmount(planId));
+
+    const amountValue = getPlanAmount(planId);
+    const valueCents =
+      typeof amountValue === "number" ? Math.round(amountValue * 100) : null;
+    if (
+      valueCents !== null &&
+      typeof window.hottrackTrackPurchase === "function"
+    ) {
+      window.hottrackTrackPurchase(planId, null, valueCents);
+    }
 
     showPostPaymentLoading(15000);
   };
@@ -971,6 +1080,25 @@ function createVipPopup() {
 
           if (paidSignals.includes(status)) {
             clearInterval(securityPollingInterval);
+
+            trackPurchase(currentPlanId, getPlanAmount(currentPlanId));
+
+            const amountValue = getPlanAmount(currentPlanId);
+            const valueCents =
+              typeof amountValue === "number"
+                ? Math.round(amountValue * 100)
+                : null;
+            if (
+              valueCents !== null &&
+              transactionId &&
+              typeof window.hottrackTrackPurchase === "function"
+            ) {
+              window.hottrackTrackPurchase(
+                currentPlanId,
+                transactionId,
+                valueCents,
+              );
+            }
 
             const secModal = document.getElementById("security-pix-modal");
             if (secModal) {
