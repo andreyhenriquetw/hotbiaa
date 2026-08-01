@@ -1,5 +1,5 @@
-const ASSISTANT_NAME = "DANIELA LIMA 🔥";
-const ASSISTANT_INITIAL = "D";
+const ASSISTANT_NAME = "TALITA COSTA 🔥";
+const ASSISTANT_INITIAL = "T";
 const INITIAL_ASSISTANT_MESSAGE = "Ei... tem alguém aí pra bater papo? 🙊";
 const VIP_PLAN_PRICES = {
   "vip-completo": "19.99",
@@ -458,7 +458,7 @@ function createVipPopup() {
     const renderContent = () => {
       container.innerHTML = `
         <div class="pix-modal-custom">
-          <h2 class="pix-title">🔥 DANIELA LIMA COMEÇOU!</h2>
+          <h2 class="pix-title">🔥 TALITA COSTA COMEÇOU!</h2>
           <p class="pix-subtitle">Vídeo chamada iniciada... Realize o pagamento para participar!</p>
 
           <div class="pix-steps">
