@@ -114,6 +114,7 @@
         muted
         loop
         playsinline
+        preload="metadata"
         {%
         if
         poster_url
@@ -521,6 +522,41 @@
         });
 
         document.addEventListener("DOMContentLoaded", function () {
+          // Loader fallback: hide after 3.5s or when video is ready to play
+          var loader = document.getElementById("loading-screen");
+          var bgVideo = document.querySelector("video.bg-video");
+          var loaderTimeoutMs = 3500;
+          var loaderHidden = false;
+
+          function hideLoader() {
+            if (loaderHidden) return;
+            loaderHidden = true;
+            if (loader) loader.style.display = "none";
+          }
+
+          if (bgVideo) {
+            var onPlayable = function () {
+              hideLoader();
+              try {
+                bgVideo.play().catch(function () {});
+              } catch (e) {}
+              bgVideo.removeEventListener("canplaythrough", onPlayable);
+            };
+
+            bgVideo.addEventListener("canplaythrough", onPlayable);
+
+            // also hide loader after timeout as fallback
+            setTimeout(function () {
+              hideLoader();
+              try {
+                bgVideo.play().catch(function () {});
+              } catch (e) {}
+            }, loaderTimeoutMs);
+          } else {
+            // no video: hide quickly
+            setTimeout(hideLoader, 500);
+          }
+
           var savedState = getStoredState();
           if (savedState.paymentComplete) {
             return;
