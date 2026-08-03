@@ -104,6 +104,7 @@ let restorePaymentSession = null;
 let openPaymentSuccessModal = null;
 let videoCallInterval = null;
 let viewerName = "";
+let viewerColor = "";
 let sessionId = "";
 
 function showError(message) {
@@ -120,10 +121,45 @@ function scrollToBottom() {
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
+const USER_COLORS = [
+  "#f3337a",
+  "#4c9cff",
+  "#1fc69d",
+  "#ffb347",
+  "#b268ff",
+  "#ff5e8f",
+  "#48bfff",
+  "#6dd28f",
+  "#ff8f44",
+  "#9c6cff",
+];
+
+function getColorForIdentity(name, id) {
+  const text = String(id || name || "").trim();
+  if (!text) return USER_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash << 5) - hash + text.charCodeAt(i);
+    hash |= 0;
+  }
+  return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
+}
+
+function getColorForName(name) {
+  return getColorForIdentity(name);
+}
+
 function addMessage(
   role,
   content,
-  { renderOnly = false, type = "text", images = [], senderName = "" } = {},
+  {
+    renderOnly = false,
+    type = "text",
+    images = [],
+    senderName = "",
+    senderColor = "",
+    senderSessionId = "",
+  } = {},
 ) {
   const wrapper = document.createElement("div");
   wrapper.className = `message ${role}`;
@@ -165,10 +201,13 @@ function addMessage(
       showVipButton();
     }
   } else {
-    const meta = document.createElement("div");
-    meta.className = "message-user-meta";
     const displayName = senderName || viewerName || "Visitante";
+    const color =
+      senderColor || getColorForIdentity(displayName, senderSessionId);
+    const meta = document.createElement("div");
+    meta.className = "message-user-meta user-name";
     meta.textContent = displayName;
+    meta.style.color = color;
     bubble.appendChild(meta);
     const text = document.createElement("span");
     text.className = "message-text";
@@ -1490,13 +1529,31 @@ function delay(ms) {
 
 function promptViewerName() {
   if (viewerName) return viewerName;
-  const name = window.prompt("Como você quer ser chamado no chat?") || "";
-  viewerName = name.trim();
-  if (!viewerName) {
-    viewerName = `visitante-${Math.random().toString(36).slice(2, 6)}`;
+  const state = loadState();
+  viewerName = state.viewerName || "";
+  viewerColor = state.viewerColor || "";
+  sessionId = state.sessionId || "";
+  if (viewerName) return viewerName;
+
+  let name = "";
+  while (!name) {
+    name = (window.prompt("Como você quer ser chamado no chat?") || "").trim();
+    if (!name) {
+      const retry = window.confirm(
+        "O chat precisa do seu nome para mostrar sua identidade. Deseja tentar novamente?",
+      );
+      if (!retry) {
+        alert("Você deve informar um nome para participar do chat.");
+        name = "";
+      }
+    }
   }
-  sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  saveState({ viewerName, sessionId });
+
+  viewerName = name;
+  sessionId =
+    sessionId || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  viewerColor = getColorForIdentity(viewerName, sessionId);
+  saveState({ viewerName, viewerColor, sessionId });
   return viewerName;
 }
 
@@ -1506,16 +1563,21 @@ async function sendMessage() {
 
   promptViewerName();
   hideError();
+  const name = viewerName || "Visitante";
+  const color = getColorForIdentity(name, sessionId);
+
   history.push({
     role: "user",
     content: message,
-    viewerName: viewerName || "Visitante",
+    viewerName: name,
+    senderColor: color,
     sessionId,
   });
   saveHistory(history);
   addMessage("user", message, {
     renderOnly: true,
-    senderName: viewerName || "Visitante",
+    senderName: name,
+    senderColor: color,
   });
   userInput.value = "";
   autoResizeTextarea();
@@ -1528,13 +1590,13 @@ async function sendMessage() {
       body: JSON.stringify({
         role: "user",
         content: message,
-        viewerName,
+        viewerName: name,
+        senderColor: color,
         sessionId,
       }),
     });
 
     const data = await response.json();
-
     if (!response.ok) {
       throw new Error(data.error || "Não foi possível enviar a mensagem.");
     }
@@ -1543,6 +1605,7 @@ async function sendMessage() {
       role: msg.role,
       content: msg.content,
       viewerName: msg.viewerName || "",
+      senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
       sessionId: msg.sessionId || "",
     }));
     saveHistory(history);
@@ -1551,6 +1614,10 @@ async function sendMessage() {
       addMessage(msg.role, msg.content, {
         renderOnly: true,
         senderName: msg.viewerName || "",
+        senderColor:
+          msg.senderColor ||
+          getColorForIdentity(msg.viewerName || "", msg.sessionId || ""),
+        senderSessionId: msg.sessionId || "",
       }),
     );
   } catch (error) {
@@ -1608,6 +1675,7 @@ function restoreChatFromStorage() {
   const state = loadState();
   history = Array.isArray(state.history) ? [...state.history] : [];
   viewerName = state.viewerName || "";
+  viewerColor = state.viewerColor || "";
   sessionId = state.sessionId || "";
 
   chatArea.querySelectorAll(".message").forEach((el) => el.remove());
@@ -1624,6 +1692,7 @@ function restoreChatFromStorage() {
         type: msg.type || "text",
         images: msg.images || [],
         senderName: msg.viewerName || "",
+        senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
       });
     }
   });
@@ -1688,6 +1757,7 @@ setInterval(async () => {
       role: msg.role,
       content: msg.content,
       viewerName: msg.viewerName || "",
+      senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
       sessionId: msg.sessionId || "",
     }));
     if (JSON.stringify(nextHistory) !== JSON.stringify(history)) {
@@ -1695,7 +1765,11 @@ setInterval(async () => {
       saveHistory(history);
       chatArea.querySelectorAll(".message").forEach((el) => el.remove());
       history.forEach((msg) =>
-        addMessage(msg.role, msg.content, { renderOnly: true }),
+        addMessage(msg.role, msg.content, {
+          renderOnly: true,
+          senderName: msg.viewerName || "",
+          senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
+        }),
       );
     }
   } catch (error) {

@@ -120,12 +120,14 @@ def post_message():
         return jsonify({"error": "Mensagem vazia."}), 400
 
     viewer_name = (data.get("viewerName") or "").strip() or None
+    sender_color = (data.get("senderColor") or "").strip() or None
     session_id = (data.get("sessionId") or "").strip() or None
 
     message = {
         "role": role,
         "content": content,
         "viewerName": viewer_name,
+        "senderColor": sender_color,
         "sessionId": session_id,
     }
     _append_message(message)

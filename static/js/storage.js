@@ -10,6 +10,7 @@ function defaultState() {
     paymentConfirmed: false,
     paymentConfirmedNotified: false,
     viewerName: "",
+    viewerColor: "",
     sessionId: "",
   };
 }

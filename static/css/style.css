@@ -328,14 +328,11 @@ body {
   margin-bottom: 6px;
 }
 
-.message-text {
-  display: block;
-  color: var(--text-white);
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.5;
+.message-user-meta.user-name {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
 }
-
 .assistant-image-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
