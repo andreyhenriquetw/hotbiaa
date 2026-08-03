@@ -1,6 +1,5 @@
 const ASSISTANT_NAME = "TALITA COSTA 🔥";
 const ASSISTANT_INITIAL = "T";
-const INITIAL_ASSISTANT_MESSAGE = "Ei... tem alguém aí pra bater papo? 🙊";
 const VIP_PLAN_PRICES = {
   "vip-completo": "19.99",
   "vip-basico": "12.98",
@@ -1656,12 +1655,6 @@ userInput.addEventListener("input", () => {
   }
 });
 
-function showInitialAssistantMessage() {
-  history.push({ role: "assistant", content: INITIAL_ASSISTANT_MESSAGE });
-  saveHistory(history);
-  addMessage("assistant", INITIAL_ASSISTANT_MESSAGE, { renderOnly: true });
-}
-
 function restoreChatFromStorage() {
   const state = loadState();
   history = Array.isArray(state.history) ? [...state.history] : [];
@@ -1672,7 +1665,6 @@ function restoreChatFromStorage() {
   chatArea.querySelectorAll(".message").forEach((el) => el.remove());
 
   if (history.length === 0) {
-    showInitialAssistantMessage();
     return;
   }
 
