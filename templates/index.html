@@ -107,25 +107,7 @@
           </div>
         </div>
       </div>
-      {% if video_url %}
-      <video
-        class="bg-video"
-        autoplay
-        muted
-        loop
-        playsinline
-        preload="metadata"
-        {%
-        if
-        poster_url
-        %}poster="{{ poster_url }}"
-        {%
-        endif
-        %}
-      >
-        <source src="{{ video_url }}" type="video/mp4" />
-      </video>
-      {% endif %} {% if live_stream_hls_url %}
+      {% if live_stream_hls_url %}
       <video
         id="live-stream-player"
         class="live-stream-player"

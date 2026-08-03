@@ -234,6 +234,7 @@
       let streamTimer = null;
       let lastSendAt = 0;
       let lastFrameSent = null;
+      let modelHistory = [];
       const MAX_MODEL_MESSAGES = 60;
       const STREAM_FPS = 12;
       const STREAM_INTERVAL_MS = 1000 / STREAM_FPS;
@@ -268,11 +269,46 @@
           ? messages.slice(-MAX_MODEL_MESSAGES)
           : [];
 
-        messagesBox.innerHTML = "";
-        visibleMessages.forEach((msg) => {
-          messagesBox.appendChild(createMessageBubble(msg));
-        });
+        const sameMessages =
+          visibleMessages.length === modelHistory.length &&
+          visibleMessages.every(
+            (msg, idx) =>
+              msg.role === modelHistory[idx].role &&
+              msg.content === modelHistory[idx].content &&
+              msg.viewerName === modelHistory[idx].viewerName &&
+              msg.senderColor === modelHistory[idx].senderColor,
+          );
 
+        if (sameMessages) {
+          return;
+        }
+
+        const appendOnly =
+          modelHistory.length > 0 &&
+          visibleMessages.length > modelHistory.length &&
+          visibleMessages
+            .slice(0, modelHistory.length)
+            .every(
+              (msg, idx) =>
+                msg.role === modelHistory[idx].role &&
+                msg.content === modelHistory[idx].content &&
+                msg.viewerName === modelHistory[idx].viewerName &&
+                msg.senderColor === modelHistory[idx].senderColor,
+            );
+
+        if (appendOnly) {
+          const newMessages = visibleMessages.slice(modelHistory.length);
+          newMessages.forEach((msg) => {
+            messagesBox.appendChild(createMessageBubble(msg));
+          });
+        } else {
+          messagesBox.innerHTML = "";
+          visibleMessages.forEach((msg) => {
+            messagesBox.appendChild(createMessageBubble(msg));
+          });
+        }
+
+        modelHistory = visibleMessages;
         messagesBox.scrollTop = messagesBox.scrollHeight;
         requestAnimationFrame(() => {
           messagesBox.scrollTop = messagesBox.scrollHeight;

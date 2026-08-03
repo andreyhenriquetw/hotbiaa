@@ -1733,6 +1733,18 @@ function restoreSession() {
   restorePaymentFromStorage();
 }
 
+function areSameMessage(a, b) {
+  return (
+    a.role === b.role &&
+    a.content === b.content &&
+    a.viewerName === b.viewerName &&
+    a.senderColor === b.senderColor &&
+    a.sessionId === b.sessionId &&
+    a.type === b.type &&
+    JSON.stringify(a.images || []) === JSON.stringify(b.images || [])
+  );
+}
+
 window.addEventListener("load", () => {
   const loader = document.getElementById("loading-screen");
   trackPageView();
@@ -1759,19 +1771,52 @@ setInterval(async () => {
       viewerName: msg.viewerName || "",
       senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
       sessionId: msg.sessionId || "",
+      type: msg.type || "text",
+      images: msg.images || [],
     }));
-    if (JSON.stringify(nextHistory) !== JSON.stringify(history)) {
-      history = nextHistory;
-      saveHistory(history);
-      chatArea.querySelectorAll(".message").forEach((el) => el.remove());
-      history.forEach((msg) =>
+
+    const sameHistory =
+      nextHistory.length === history.length &&
+      nextHistory.every((msg, idx) => areSameMessage(msg, history[idx]));
+    if (sameHistory) {
+      return;
+    }
+
+    const appendOnly =
+      history.length > 0 &&
+      nextHistory.length > history.length &&
+      history.every((msg, idx) => areSameMessage(msg, nextHistory[idx]));
+
+    if (appendOnly) {
+      const newMessages = nextHistory.slice(history.length);
+      newMessages.forEach((msg) =>
         addMessage(msg.role, msg.content, {
           renderOnly: true,
           senderName: msg.viewerName || "",
           senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
+          senderSessionId: msg.sessionId || "",
+          type: msg.type || "text",
+          images: msg.images || [],
         }),
       );
+      history = nextHistory;
+      saveHistory(history);
+      return;
     }
+
+    history = nextHistory;
+    saveHistory(history);
+    chatArea.querySelectorAll(".message").forEach((el) => el.remove());
+    history.forEach((msg) =>
+      addMessage(msg.role, msg.content, {
+        renderOnly: true,
+        senderName: msg.viewerName || "",
+        senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
+        senderSessionId: msg.sessionId || "",
+        type: msg.type || "text",
+        images: msg.images || [],
+      }),
+    );
   } catch (error) {
     console.error(error);
   }
