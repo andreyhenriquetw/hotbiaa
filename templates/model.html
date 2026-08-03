@@ -231,7 +231,15 @@
       const sendBtn = document.getElementById("model-chat-send");
       let cameraStream = null;
       let cameraOn = false;
+      let streamTimer = null;
+      let lastSendAt = 0;
+      let lastFrameSent = null;
       const MAX_MODEL_MESSAGES = 60;
+      const STREAM_FPS = 6;
+      const STREAM_INTERVAL_MS = 1000 / STREAM_FPS;
+      const STREAM_TARGET_WIDTH = 960;
+      const STREAM_TARGET_HEIGHT = 540;
+      const STREAM_QUALITY = 0.68;
 
       function createMessageBubble(msg) {
         const bubble = document.createElement("div");
@@ -265,7 +273,6 @@
           messagesBox.appendChild(createMessageBubble(msg));
         });
 
-        // Rola automaticamente até a última mensagem no final da renderização
         messagesBox.scrollTop = messagesBox.scrollHeight;
         requestAnimationFrame(() => {
           messagesBox.scrollTop = messagesBox.scrollHeight;
@@ -284,11 +291,77 @@
         }
       }
 
+      async function sendStreamFrame() {
+        if (
+          !cameraOn ||
+          !modelPreview.videoWidth ||
+          !modelPreview.videoHeight
+        ) {
+          return;
+        }
+
+        const now = Date.now();
+        if (now - lastSendAt < STREAM_INTERVAL_MS) {
+          return;
+        }
+        lastSendAt = now;
+
+        const videoWidth = modelPreview.videoWidth || STREAM_TARGET_WIDTH;
+        const videoHeight = modelPreview.videoHeight || STREAM_TARGET_HEIGHT;
+        const scale = Math.min(
+          1,
+          Math.min(
+            STREAM_TARGET_WIDTH / videoWidth,
+            STREAM_TARGET_HEIGHT / videoHeight,
+          ),
+        );
+        const width = Math.max(320, Math.round(videoWidth * scale));
+        const height = Math.max(240, Math.round(videoHeight * scale));
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d", { alpha: false });
+        if (!ctx) return;
+
+        ctx.drawImage(modelPreview, 0, 0, width, height);
+        const frame = canvas.toDataURL("image/jpeg", STREAM_QUALITY);
+        if (frame === lastFrameSent) {
+          return;
+        }
+        lastFrameSent = frame;
+
+        await fetch("/api/model/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled: true, frame }),
+        });
+      }
+
+      function startStreamTimer() {
+        if (streamTimer) return;
+        streamTimer = setInterval(() => {
+          sendStreamFrame().catch(() => {});
+        }, STREAM_INTERVAL_MS);
+      }
+
+      function stopStreamTimer() {
+        if (streamTimer) {
+          clearInterval(streamTimer);
+          streamTimer = null;
+        }
+      }
+
       async function toggleCamera() {
         if (!cameraOn) {
           try {
             cameraStream = await navigator.mediaDevices.getUserMedia({
-              video: true,
+              video: {
+                facingMode: "user",
+                width: { ideal: STREAM_TARGET_WIDTH },
+                height: { ideal: STREAM_TARGET_HEIGHT },
+                frameRate: { ideal: STREAM_FPS, max: STREAM_FPS + 2 },
+              },
               audio: false,
             });
             modelPreview.srcObject = cameraStream;
@@ -297,6 +370,8 @@
             modelPlaceholder.style.display = "none";
             toggleBtn.textContent = "Desligar câmera";
             cameraOn = true;
+            startStreamTimer();
+            await sendStreamFrame();
             window.dispatchEvent(
               new CustomEvent("model-camera-state", { detail: { on: true } }),
             );
@@ -304,6 +379,12 @@
             alert("Não foi possível acessar a câmera da modelo.");
           }
         } else {
+          stopStreamTimer();
+          fetch("/api/model/stream", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled: false }),
+          }).catch(() => {});
           cameraStream?.getTracks().forEach((track) => track.stop());
           cameraStream = null;
           modelPreview.srcObject = null;

@@ -126,6 +126,11 @@
         <source src="{{ video_url }}" type="video/mp4" />
       </video>
       {% endif %}
+      <canvas
+        id="live-stream-canvas"
+        class="live-stream-canvas"
+        aria-hidden="true"
+      ></canvas>
       <div class="bg-fallback" aria-hidden="true"></div>
 
       <div class="ui-overlay">
@@ -583,6 +588,114 @@
           }, 1800000);
         });
       })();
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const streamCanvas = document.getElementById("live-stream-canvas");
+        const bgVideo = document.querySelector("video.bg-video");
+        if (!streamCanvas) return;
+
+        const resizeCanvas = () => {
+          const width = Math.max(
+            1,
+            Math.floor(streamCanvas.clientWidth || 480),
+          );
+          const height = Math.max(
+            1,
+            Math.floor(streamCanvas.clientHeight || 854),
+          );
+          if (streamCanvas.width !== width || streamCanvas.height !== height) {
+            streamCanvas.width = width;
+            streamCanvas.height = height;
+          }
+        };
+
+        const setStreamVisible = (visible) => {
+          streamCanvas.classList.toggle("is-playing", visible);
+          if (bgVideo) {
+            bgVideo.classList.toggle("is-hidden", visible);
+          }
+        };
+
+        let pendingFrameUrl = null;
+        let frameRenderToken = 0;
+        let lastAppliedFrameUrl = null;
+        let lastRenderAt = 0;
+        let bufferedFrameUrl = null;
+
+        const renderBufferFrame = () => {
+          if (!bufferedFrameUrl) return;
+          const now = Date.now();
+          if (now - lastRenderAt < 90) {
+            return;
+          }
+          lastRenderAt = now;
+
+          const image = new Image();
+          image.onload = () => {
+            resizeCanvas();
+            const ctx = streamCanvas.getContext("2d", { alpha: false });
+            if (!ctx) return;
+            ctx.clearRect(0, 0, streamCanvas.width, streamCanvas.height);
+            const scale = Math.max(
+              streamCanvas.width / image.width,
+              streamCanvas.height / image.height,
+            );
+            const drawWidth = image.width * scale;
+            const drawHeight = image.height * scale;
+            const offsetX = (drawWidth - streamCanvas.width) / 2;
+            const offsetY = (drawHeight - streamCanvas.height) / 2;
+            ctx.drawImage(image, -offsetX, -offsetY, drawWidth, drawHeight);
+            lastAppliedFrameUrl = bufferedFrameUrl;
+            bufferedFrameUrl = null;
+          };
+          image.src = bufferedFrameUrl;
+        };
+
+        const drawFrame = (frameUrl) => {
+          if (!frameUrl || frameUrl === lastAppliedFrameUrl) return;
+          pendingFrameUrl = frameUrl;
+          const token = ++frameRenderToken;
+          const image = new Image();
+          image.onload = () => {
+            if (token !== frameRenderToken || image.src !== pendingFrameUrl) {
+              return;
+            }
+            bufferedFrameUrl = pendingFrameUrl;
+            pendingFrameUrl = null;
+            renderBufferFrame();
+          };
+          image.onerror = () => {
+            if (token === frameRenderToken) {
+              pendingFrameUrl = null;
+            }
+          };
+          image.src = frameUrl;
+        };
+
+        const syncModelStream = async () => {
+          try {
+            const response = await fetch("/api/model/stream-state", {
+              cache: "no-store",
+            });
+            const data = await response.json();
+            if (data.enabled && data.frame) {
+              drawFrame(data.frame);
+              setStreamVisible(true);
+            } else {
+              setStreamVisible(false);
+            }
+          } catch (error) {
+            setStreamVisible(false);
+          }
+        };
+
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+        setInterval(syncModelStream, 180);
+        setInterval(renderBufferFrame, 90);
+        syncModelStream();
+      });
     </script>
     <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
     <script src="{{ url_for('static', filename='js/chat.js') }}"></script>

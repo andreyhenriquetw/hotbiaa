@@ -37,3 +37,22 @@ def test_live_state_initializes():
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["messages"] == []
+
+
+def test_model_stream_accepts_frame():
+    client = app.test_client()
+    response = client.post(
+        '/api/model/stream',
+        json={"frame": "data:image/jpeg;base64,abc123", "enabled": True},
+    )
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["ok"] is True
+
+
+def test_model_stream_state_reports_status():
+    client = app.test_client()
+    response = client.get('/api/model/stream-state')
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert payload["enabled"] in {True, False}

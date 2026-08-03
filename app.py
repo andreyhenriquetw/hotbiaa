@@ -49,6 +49,8 @@ app = Flask(__name__)
 
 _shared_messages = []
 _shared_messages_lock = Lock()
+_model_stream_state = {"enabled": False, "frame": None, "updated_at": None}
+_model_stream_lock = Lock()
 
 
 def _get_state():
@@ -65,6 +67,26 @@ def _append_message(message: dict):
 def clear_shared_messages():
     with _shared_messages_lock:
         _shared_messages.clear()
+
+
+def _get_model_stream_state():
+    with _model_stream_lock:
+        return {
+            "enabled": bool(_model_stream_state.get("enabled")),
+            "frame": _model_stream_state.get("frame"),
+            "updated_at": _model_stream_state.get("updated_at"),
+        }
+
+
+def _set_model_stream_state(enabled: bool, frame: str | None = None):
+    with _model_stream_lock:
+        _model_stream_state["enabled"] = bool(enabled)
+        _model_stream_state["frame"] = frame if enabled else None
+        _model_stream_state["updated_at"] = None if not enabled else _model_stream_state.get("updated_at")
+        if enabled:
+            from datetime import datetime
+
+            _model_stream_state["updated_at"] = datetime.utcnow().isoformat() + "Z"
 
 
 @app.route("/")
@@ -132,6 +154,28 @@ def post_message():
     }
     _append_message(message)
     return jsonify({"ok": True, "messages": _get_state()["messages"]})
+
+
+@app.route("/api/model/stream", methods=["POST"])
+def model_stream():
+    data = request.get_json(silent=True) or {}
+    enabled = bool(data.get("enabled"))
+    frame = (data.get("frame") or "").strip() or None
+
+    if not enabled:
+        _set_model_stream_state(False, None)
+        return jsonify({"ok": True, "enabled": False})
+
+    if not frame:
+        return jsonify({"error": "frame é obrigatório."}), 400
+
+    _set_model_stream_state(True, frame)
+    return jsonify({"ok": True, "enabled": True})
+
+
+@app.route("/api/model/stream-state", methods=["GET"])
+def model_stream_state():
+    return jsonify(_get_model_stream_state())
 
 
 @app.route("/model")
