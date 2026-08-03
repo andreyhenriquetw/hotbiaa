@@ -38,6 +38,14 @@ body {
   background: #1a1018;
 }
 
+@media (min-width: 900px) {
+  .live-screen {
+    max-width: 480px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 .bg-video {
   position: absolute;
   inset: 0;
@@ -158,6 +166,84 @@ body {
 }
 
 /* ── Chat area ── */
+.model-stage {
+  margin: 12px 14px 0;
+  padding: 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.model-stage--private {
+  margin-top: 6px;
+}
+
+.model-stage__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.model-stage__badge {
+  color: #ff8aa5;
+  font-weight: 700;
+}
+
+.model-stage__status {
+  color: #8cf0aa;
+}
+
+.model-stage__video-wrap {
+  position: relative;
+  min-height: 170px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.7),
+    rgba(79, 20, 57, 0.8)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.model-stage__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  background: #000;
+}
+
+.model-stage__video.is-live {
+  display: block;
+}
+
+.model-stage__placeholder {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+.model-stage__toggle {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  cursor: pointer;
+}
+
 .chat-area {
   flex: none;
   min-height: 0;
@@ -209,6 +295,11 @@ body {
   border-radius: var(--radius-bubble);
 }
 
+.message.user .bubble::before {
+  content: "";
+  display: none;
+}
+
 .message.assistant .bubble {
   background: var(--overlay-dark);
   backdrop-filter: blur(10px);
@@ -224,6 +315,16 @@ body {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+
+.message-user-meta {
+  display: block;
+  color: var(--name-coral);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin-bottom: 6px;
 }
 

@@ -9,6 +9,8 @@ function defaultState() {
     payment: null,
     paymentConfirmed: false,
     paymentConfirmedNotified: false,
+    viewerName: "",
+    sessionId: "",
   };
 }
 

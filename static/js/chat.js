@@ -103,6 +103,8 @@ let currentPlanId = null;
 let restorePaymentSession = null;
 let openPaymentSuccessModal = null;
 let videoCallInterval = null;
+let viewerName = "";
+let sessionId = "";
 
 function showError(message) {
   errorBanner.textContent = message;
@@ -121,7 +123,7 @@ function scrollToBottom() {
 function addMessage(
   role,
   content,
-  { renderOnly = false, type = "text", images = [] } = {},
+  { renderOnly = false, type = "text", images = [], senderName = "" } = {},
 ) {
   const wrapper = document.createElement("div");
   wrapper.className = `message ${role}`;
@@ -163,7 +165,15 @@ function addMessage(
       showVipButton();
     }
   } else {
-    bubble.textContent = content;
+    const meta = document.createElement("div");
+    meta.className = "message-user-meta";
+    const displayName = senderName || viewerName || "Visitante";
+    meta.textContent = displayName;
+    bubble.appendChild(meta);
+    const text = document.createElement("span");
+    text.className = "message-text";
+    text.textContent = content;
+    bubble.appendChild(text);
   }
 
   wrapper.appendChild(bubble);
@@ -1478,40 +1488,71 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function promptViewerName() {
+  if (viewerName) return viewerName;
+  const name = window.prompt("Como você quer ser chamado no chat?") || "";
+  viewerName = name.trim();
+  if (!viewerName) {
+    viewerName = `visitante-${Math.random().toString(36).slice(2, 6)}`;
+  }
+  sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  saveState({ viewerName, sessionId });
+  return viewerName;
+}
+
 async function sendMessage() {
   const message = userInput.value.trim();
   if (!message || isSending) return;
 
+  promptViewerName();
   hideError();
-  history.push({ role: "user", content: message });
+  history.push({
+    role: "user",
+    content: message,
+    viewerName: viewerName || "Visitante",
+    sessionId,
+  });
   saveHistory(history);
-  addMessage("user", message, { renderOnly: true });
+  addMessage("user", message, {
+    renderOnly: true,
+    senderName: viewerName || "Visitante",
+  });
   userInput.value = "";
   autoResizeTextarea();
   setLoading(true);
 
   try {
-    const response = await fetch("/chat", {
+    const response = await fetch("/api/post-message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({
+        role: "user",
+        content: message,
+        viewerName,
+        sessionId,
+      }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Não foi possível obter resposta.");
+      throw new Error(data.error || "Não foi possível enviar a mensagem.");
     }
 
-    // Nota: já adicionamos a mensagem do usuário antes do fetch,
-    // não devemos duplicá-la novamente aqui.
-    if (data.response && data.response.length > 20) {
-      await delay(6000);
-    }
-
-    history.push({ role: "assistant", content: data.response });
+    history = (data.messages || []).map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+      viewerName: msg.viewerName || "",
+      sessionId: msg.sessionId || "",
+    }));
     saveHistory(history);
-    addMessage("assistant", data.response, { renderOnly: true });
+    chatArea.querySelectorAll(".message").forEach((el) => el.remove());
+    history.forEach((msg) =>
+      addMessage(msg.role, msg.content, {
+        renderOnly: true,
+        senderName: msg.viewerName || "",
+      }),
+    );
   } catch (error) {
     showError(error.message);
   } finally {
@@ -1550,7 +1591,12 @@ userInput.addEventListener("keydown", (event) => {
   }
 });
 
-userInput.addEventListener("input", autoResizeTextarea);
+userInput.addEventListener("input", () => {
+  autoResizeTextarea();
+  if (!viewerName) {
+    promptViewerName();
+  }
+});
 
 function showInitialAssistantMessage() {
   history.push({ role: "assistant", content: INITIAL_ASSISTANT_MESSAGE });
@@ -1561,6 +1607,8 @@ function showInitialAssistantMessage() {
 function restoreChatFromStorage() {
   const state = loadState();
   history = Array.isArray(state.history) ? [...state.history] : [];
+  viewerName = state.viewerName || "";
+  sessionId = state.sessionId || "";
 
   chatArea.querySelectorAll(".message").forEach((el) => el.remove());
 
@@ -1575,6 +1623,7 @@ function restoreChatFromStorage() {
         renderOnly: true,
         type: msg.type || "text",
         images: msg.images || [],
+        senderName: msg.viewerName || "",
       });
     }
   });
@@ -1630,4 +1679,27 @@ window.addEventListener("load", () => {
 
 initBackgroundVideo();
 restoreSession();
+setInterval(async () => {
+  try {
+    const response = await fetch("/api/live-state");
+    const data = await response.json();
+    if (!Array.isArray(data.messages)) return;
+    const nextHistory = data.messages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+      viewerName: msg.viewerName || "",
+      sessionId: msg.sessionId || "",
+    }));
+    if (JSON.stringify(nextHistory) !== JSON.stringify(history)) {
+      history = nextHistory;
+      saveHistory(history);
+      chatArea.querySelectorAll(".message").forEach((el) => el.remove());
+      history.forEach((msg) =>
+        addMessage(msg.role, msg.content, { renderOnly: true }),
+      );
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}, 1000);
 userInput.focus();

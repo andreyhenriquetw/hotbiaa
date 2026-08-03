@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, render_template, request
+from threading import Lock
 
 from config import Config
-from services.grok_service import chat_with_grok
 from services.pix_service import create_pix_charge, get_pix_status
 from services.pushinpay_service import create_checkout, get_checkout_status
 from services.tracking_service import TrackingService
@@ -47,6 +47,25 @@ def _trim_history(messages: list[dict], max_pairs: int = None, max_chars: int = 
 
 app = Flask(__name__)
 
+_shared_messages = []
+_shared_messages_lock = Lock()
+
+
+def _get_state():
+    with _shared_messages_lock:
+        return {"messages": list(_shared_messages)}
+
+
+def _append_message(message: dict):
+    with _shared_messages_lock:
+        _shared_messages.append(message)
+        return list(_shared_messages)
+
+
+def clear_shared_messages():
+    with _shared_messages_lock:
+        _shared_messages.clear()
+
 
 @app.route("/")
 def index():
@@ -78,33 +97,44 @@ def private():
 def chat():
     data = request.get_json(silent=True) or {}
     user_message = (data.get("message") or "").strip()
-    history = data.get("history") or []
 
     if not user_message:
         return jsonify({"error": "Mensagem vazia."}), 400
 
-    if not Config.XAI_API_KEY:
-        return jsonify(
-            {"error": "Configure a chave XAI_API_KEY no arquivo .env para usar a IA."}
-        ), 500
+    message = {"role": "user", "content": user_message}
+    _append_message(message)
+    return jsonify({"response": "", "messages": _get_state()["messages"]})
 
-    messages = [
-        *[
-            {"role": item["role"], "content": item["content"]}
-            for item in history
-            if item.get("role") in ("user", "assistant") and item.get("content")
-        ],
-        {"role": "user", "content": user_message},
-    ]
 
-    # Economiza tokens truncando/sanitizando o histórico antes de enviar
-    messages = _trim_history(messages)
+@app.route("/api/live-state", methods=["GET"])
+def live_state():
+    return jsonify(_get_state())
 
-    try:
-        reply = chat_with_grok(messages)
-        return jsonify({"response": reply})
-    except Exception as exc:
-        return jsonify({"error": f"Erro ao contactar a IA: {exc}"}), 502
+
+@app.route("/api/post-message", methods=["POST"])
+def post_message():
+    data = request.get_json(silent=True) or {}
+    role = (data.get("role") or "user").strip() or "user"
+    content = (data.get("content") or "").strip()
+    if not content:
+        return jsonify({"error": "Mensagem vazia."}), 400
+
+    viewer_name = (data.get("viewerName") or "").strip() or None
+    session_id = (data.get("sessionId") or "").strip() or None
+
+    message = {
+        "role": role,
+        "content": content,
+        "viewerName": viewer_name,
+        "sessionId": session_id,
+    }
+    _append_message(message)
+    return jsonify({"ok": True, "messages": _get_state()["messages"]})
+
+
+@app.route("/model")
+def model_admin():
+    return render_template("model.html")
 
 
 @app.route("/track", methods=["POST"])
