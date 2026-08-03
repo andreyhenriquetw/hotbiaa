@@ -1601,25 +1601,16 @@ async function sendMessage() {
       throw new Error(data.error || "Não foi possível enviar a mensagem.");
     }
 
-    history = (data.messages || []).map((msg) => ({
+    const nextHistory = (data.messages || []).map((msg) => ({
       role: msg.role,
       content: msg.content,
       viewerName: msg.viewerName || "",
       senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
       sessionId: msg.sessionId || "",
+      type: msg.type || "text",
+      images: msg.images || [],
     }));
-    saveHistory(history);
-    chatArea.querySelectorAll(".message").forEach((el) => el.remove());
-    history.forEach((msg) =>
-      addMessage(msg.role, msg.content, {
-        renderOnly: true,
-        senderName: msg.viewerName || "",
-        senderColor:
-          msg.senderColor ||
-          getColorForIdentity(msg.viewerName || "", msg.sessionId || ""),
-        senderSessionId: msg.sessionId || "",
-      }),
-    );
+    updateChatHistory(nextHistory);
   } catch (error) {
     showError(error.message);
   } finally {
@@ -1733,6 +1724,50 @@ function restoreSession() {
   restorePaymentFromStorage();
 }
 
+function updateChatHistory(nextHistory) {
+  const sameHistory =
+    nextHistory.length === history.length &&
+    nextHistory.every((msg, idx) => areSameMessage(msg, history[idx]));
+
+  if (sameHistory) {
+    return;
+  }
+
+  const appendOnly =
+    history.length > 0 &&
+    nextHistory.length > history.length &&
+    history.every((msg, idx) => areSameMessage(msg, nextHistory[idx]));
+
+  if (appendOnly) {
+    const newMessages = nextHistory.slice(history.length);
+    newMessages.forEach((msg) =>
+      addMessage(msg.role, msg.content, {
+        renderOnly: true,
+        senderName: msg.viewerName || "",
+        senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
+        senderSessionId: msg.sessionId || "",
+        type: msg.type || "text",
+        images: msg.images || [],
+      }),
+    );
+  } else {
+    chatArea.querySelectorAll(".message").forEach((el) => el.remove());
+    nextHistory.forEach((msg) =>
+      addMessage(msg.role, msg.content, {
+        renderOnly: true,
+        senderName: msg.viewerName || "",
+        senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
+        senderSessionId: msg.sessionId || "",
+        type: msg.type || "text",
+        images: msg.images || [],
+      }),
+    );
+  }
+
+  history = nextHistory;
+  saveHistory(history);
+}
+
 function areSameMessage(a, b) {
   return (
     a.role === b.role &&
@@ -1782,41 +1817,7 @@ setInterval(async () => {
       return;
     }
 
-    const appendOnly =
-      history.length > 0 &&
-      nextHistory.length > history.length &&
-      history.every((msg, idx) => areSameMessage(msg, nextHistory[idx]));
-
-    if (appendOnly) {
-      const newMessages = nextHistory.slice(history.length);
-      newMessages.forEach((msg) =>
-        addMessage(msg.role, msg.content, {
-          renderOnly: true,
-          senderName: msg.viewerName || "",
-          senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
-          senderSessionId: msg.sessionId || "",
-          type: msg.type || "text",
-          images: msg.images || [],
-        }),
-      );
-      history = nextHistory;
-      saveHistory(history);
-      return;
-    }
-
-    history = nextHistory;
-    saveHistory(history);
-    chatArea.querySelectorAll(".message").forEach((el) => el.remove());
-    history.forEach((msg) =>
-      addMessage(msg.role, msg.content, {
-        renderOnly: true,
-        senderName: msg.viewerName || "",
-        senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
-        senderSessionId: msg.sessionId || "",
-        type: msg.type || "text",
-        images: msg.images || [],
-      }),
-    );
+    updateChatHistory(nextHistory);
   } catch (error) {
     console.error(error);
   }
