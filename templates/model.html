@@ -235,11 +235,11 @@
       let lastSendAt = 0;
       let lastFrameSent = null;
       const MAX_MODEL_MESSAGES = 60;
-      const STREAM_FPS = 6;
+      const STREAM_FPS = 12;
       const STREAM_INTERVAL_MS = 1000 / STREAM_FPS;
-      const STREAM_TARGET_WIDTH = 960;
-      const STREAM_TARGET_HEIGHT = 540;
-      const STREAM_QUALITY = 0.68;
+      const STREAM_TARGET_WIDTH = 480;
+      const STREAM_TARGET_HEIGHT = 270;
+      const STREAM_QUALITY = 0.55;
 
       function createMessageBubble(msg) {
         const bubble = document.createElement("div");
@@ -293,6 +293,7 @@
 
       async function sendStreamFrame() {
         if (
+          document.hidden ||
           !cameraOn ||
           !modelPreview.videoWidth ||
           !modelPreview.videoHeight
@@ -316,7 +317,7 @@
           ),
         );
         const width = Math.max(320, Math.round(videoWidth * scale));
-        const height = Math.max(240, Math.round(videoHeight * scale));
+        const height = Math.max(180, Math.round(videoHeight * scale));
 
         const canvas = document.createElement("canvas");
         canvas.width = width;

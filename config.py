@@ -103,3 +103,8 @@ class Config:
         "BACKGROUND_POSTER_URL",
         ""
     ).strip()
+
+    LIVE_STREAM_HLS_URL = os.getenv(
+        "LIVE_STREAM_HLS_URL",
+        ""
+    ).strip()

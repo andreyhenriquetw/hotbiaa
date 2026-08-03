@@ -95,6 +95,7 @@ def index():
         "index.html",
         video_url=Config.BACKGROUND_VIDEO_URL,
         poster_url=Config.BACKGROUND_POSTER_URL,
+        live_stream_hls_url=Config.LIVE_STREAM_HLS_URL,
         config={
             "META_PIXEL_ID": Config.META_PIXEL_ID,
             "CLARITY_PROJECT_ID": Config.CLARITY_PROJECT_ID,
@@ -108,6 +109,7 @@ def private():
         "private.html",
         video_url=Config.BACKGROUND_VIDEO_URL,
         poster_url=Config.BACKGROUND_POSTER_URL,
+        live_stream_hls_url=Config.LIVE_STREAM_HLS_URL,
         config={
             "META_PIXEL_ID": Config.META_PIXEL_ID,
             "CLARITY_PROJECT_ID": Config.CLARITY_PROJECT_ID,

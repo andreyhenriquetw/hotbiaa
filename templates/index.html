@@ -125,6 +125,14 @@
       >
         <source src="{{ video_url }}" type="video/mp4" />
       </video>
+      {% endif %} {% if live_stream_hls_url %}
+      <video
+        id="live-stream-player"
+        class="live-stream-player"
+        autoplay
+        playsinline
+        muted
+      ></video>
       {% endif %}
       <canvas
         id="live-stream-canvas"
@@ -589,10 +597,46 @@
         });
       })();
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
+        const liveStreamPlayer = document.getElementById("live-stream-player");
         const streamCanvas = document.getElementById("live-stream-canvas");
         const bgVideo = document.querySelector("video.bg-video");
+        const liveStreamUrl = "{{ live_stream_hls_url }}";
+
+        if (liveStreamPlayer && liveStreamUrl) {
+          if (Hls.isSupported()) {
+            const hls = new Hls({
+              liveSyncDurationCount: 1,
+              maxBufferLength: 2,
+              maxBufferHole: 0.5,
+              backBufferLength: 0,
+              liveDurationInfinity: true,
+            });
+            hls.loadSource(liveStreamUrl);
+            hls.attachMedia(liveStreamPlayer);
+            hls.on(Hls.Events.MANIFEST_PARSED, function () {
+              liveStreamPlayer.classList.add("is-playing");
+              liveStreamPlayer.play().catch(() => {});
+              if (bgVideo) {
+                bgVideo.style.display = "none";
+              }
+            });
+          } else if (
+            liveStreamPlayer.canPlayType("application/vnd.apple.mpegurl")
+          ) {
+            liveStreamPlayer.src = liveStreamUrl;
+            liveStreamPlayer.addEventListener("loadedmetadata", function () {
+              liveStreamPlayer.classList.add("is-playing");
+              liveStreamPlayer.play().catch(() => {});
+              if (bgVideo) {
+                bgVideo.style.display = "none";
+              }
+            });
+          }
+        }
+
         if (!streamCanvas) return;
 
         const resizeCanvas = () => {
@@ -622,11 +666,13 @@
         let lastAppliedFrameUrl = null;
         let lastRenderAt = 0;
         let bufferedFrameUrl = null;
+        let renderFrameHandle = null;
+        let syncInFlight = false;
 
         const renderBufferFrame = () => {
           if (!bufferedFrameUrl) return;
           const now = Date.now();
-          if (now - lastRenderAt < 90) {
+          if (now - lastRenderAt < 16) {
             return;
           }
           lastRenderAt = now;
@@ -674,6 +720,8 @@
         };
 
         const syncModelStream = async () => {
+          if (syncInFlight) return;
+          syncInFlight = true;
           try {
             const response = await fetch("/api/model/stream-state", {
               cache: "no-store",
@@ -687,13 +735,19 @@
             }
           } catch (error) {
             setStreamVisible(false);
+          } finally {
+            syncInFlight = false;
           }
         };
 
         resizeCanvas();
         window.addEventListener("resize", resizeCanvas);
-        setInterval(syncModelStream, 180);
-        setInterval(renderBufferFrame, 90);
+        setInterval(syncModelStream, 120);
+        const renderLoop = () => {
+          renderBufferFrame();
+          renderFrameHandle = requestAnimationFrame(renderLoop);
+        };
+        renderFrameHandle = requestAnimationFrame(renderLoop);
         syncModelStream();
       });
     </script>
