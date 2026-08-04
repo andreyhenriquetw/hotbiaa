@@ -264,6 +264,16 @@
         return bubble;
       }
 
+      async function readJsonResponse(response, fallback = null) {
+        const rawText = await response.text();
+        if (!rawText) return fallback;
+        try {
+          return JSON.parse(rawText);
+        } catch (error) {
+          return fallback;
+        }
+      }
+
       function renderMessages(messages) {
         const visibleMessages = Array.isArray(messages)
           ? messages.slice(-MAX_MODEL_MESSAGES)
@@ -320,7 +330,8 @@
       async function refreshMessages() {
         try {
           const response = await fetch("/api/live-state");
-          const data = await response.json();
+          const data = await readJsonResponse(response, {});
+          if (!response.ok || !data || !Array.isArray(data.messages)) return;
           renderMessages(data.messages || []);
         } catch (error) {
           console.error(error);
@@ -438,13 +449,25 @@
       async function sendModelMessage() {
         const content = chatInput.value.trim();
         if (!content) return;
-        await fetch("/api/post-message", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: "assistant", content }),
-        });
+        try {
+          const response = await fetch("/api/post-message", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: "assistant", content }),
+          });
+          const data = await readJsonResponse(response, {});
+          if (!response.ok) {
+            console.error(
+              data?.error || "Falha ao enviar mensagem para a live.",
+            );
+            return;
+          }
+        } catch (error) {
+          console.error(error);
+          return;
+        }
         chatInput.value = "";
-        refreshMessages();
+        await refreshMessages();
       }
 
       toggleBtn.addEventListener("click", toggleCamera);
