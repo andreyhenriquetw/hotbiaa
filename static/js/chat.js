@@ -1657,28 +1657,12 @@ userInput.addEventListener("input", () => {
 
 function restoreChatFromStorage() {
   const state = loadState();
-  history = Array.isArray(state.history) ? [...state.history] : [];
+  history = [];
   viewerName = state.viewerName || "";
   viewerColor = state.viewerColor || "";
   sessionId = state.sessionId || "";
 
   chatArea.querySelectorAll(".message").forEach((el) => el.remove());
-
-  if (history.length === 0) {
-    return;
-  }
-
-  history.forEach((msg) => {
-    if (msg.role && msg.content) {
-      addMessage(msg.role, msg.content, {
-        renderOnly: true,
-        type: msg.type || "text",
-        images: msg.images || [],
-        senderName: msg.viewerName || "",
-        senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
-      });
-    }
-  });
 
   if (state.vipButtonVisible && !state.paymentConfirmed) {
     showVipButton();
@@ -1710,10 +1694,33 @@ function restorePaymentFromStorage() {
   }
 }
 
+async function refreshChatFromServer() {
+  try {
+    const response = await fetch("/api/live-state");
+    const data = await response.json();
+    if (!Array.isArray(data.messages)) return;
+
+    const nextHistory = data.messages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+      viewerName: msg.viewerName || "",
+      senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
+      sessionId: msg.sessionId || "",
+      type: msg.type || "text",
+      images: msg.images || [],
+    }));
+
+    updateChatHistory(nextHistory);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 function restoreSession() {
   restoreChatFromStorage();
   createVipPopup();
   restorePaymentFromStorage();
+  refreshChatFromServer();
 }
 
 function updateChatHistory(nextHistory) {

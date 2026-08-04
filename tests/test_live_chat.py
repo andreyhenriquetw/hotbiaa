@@ -1,3 +1,4 @@
+import importlib
 from pathlib import Path
 
 import sys
@@ -37,6 +38,24 @@ def test_live_state_initializes():
     assert response.status_code == 200
     payload = response.get_json()
     assert payload["messages"] == []
+
+
+def test_shared_messages_survive_module_reload(tmp_path, monkeypatch):
+    import app as app_module
+
+    storage_path = tmp_path / "shared_messages.json"
+    monkeypatch.setattr(app_module, "MESSAGES_STORE_PATH", str(storage_path), raising=False)
+
+    client = app_module.app.test_client()
+    response = client.post('/api/post-message', json={"role": "user", "content": "persistido"})
+    assert response.status_code == 200
+
+    reloaded_module = importlib.reload(app_module)
+    monkeypatch.setattr(reloaded_module, "MESSAGES_STORE_PATH", str(storage_path), raising=False)
+
+    response = reloaded_module.app.test_client().get('/api/live-state')
+    payload = response.get_json()
+    assert payload["messages"][-1]["content"] == "persistido"
 
 
 def test_model_stream_accepts_frame():

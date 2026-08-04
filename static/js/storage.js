@@ -33,7 +33,8 @@ function saveState(partial) {
 }
 
 function saveHistory(history) {
-  saveState({ history });
+  // O histórico do chat agora é mantido no servidor e não precisa ser persistido
+  // no navegador para evitar inconsistências entre páginas e ambientes hospedados.
 }
 
 function saveVipButtonVisible(visible) {

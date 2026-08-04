@@ -1,3 +1,8 @@
+import json
+import os
+import sqlite3
+from pathlib import Path
+
 from flask import Flask, jsonify, render_template, request
 from threading import Lock
 
@@ -47,26 +52,70 @@ def _trim_history(messages: list[dict], max_pairs: int = None, max_chars: int = 
 
 app = Flask(__name__)
 
-_shared_messages = []
 _shared_messages_lock = Lock()
 _model_stream_state = {"enabled": False, "frame": None, "updated_at": None}
 _model_stream_lock = Lock()
+MESSAGES_STORE_PATH = str(Path(__file__).resolve().parent / "data" / "shared_messages.json")
+
+
+def _normalize_message(message: dict, *, default_role: str = "user") -> dict:
+    role = (message.get("role") or default_role).strip() or default_role
+    content = (message.get("content") or "").strip()
+    return {
+        "role": role,
+        "content": content,
+        "viewerName": message.get("viewerName"),
+        "senderColor": message.get("senderColor"),
+        "sessionId": message.get("sessionId"),
+        "type": message.get("type") or "text",
+        "images": message.get("images") or [],
+    }
+
+
+def _ensure_store_exists() -> Path:
+    path = Path(MESSAGES_STORE_PATH)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        path.write_text("[]", encoding="utf-8")
+    return path
+
+
+def _load_messages_from_store() -> list[dict]:
+    path = _ensure_store_exists()
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
+
+    if not isinstance(payload, list):
+        return []
+
+    return [_normalize_message(message) for message in payload if isinstance(message, dict)]
+
+
+def _save_messages_to_store(messages: list[dict]) -> None:
+    path = _ensure_store_exists()
+    temp_path = path.with_suffix(path.suffix + ".tmp")
+    temp_path.write_text(json.dumps(messages, ensure_ascii=False, indent=2), encoding="utf-8")
+    os.replace(temp_path, path)
 
 
 def _get_state():
     with _shared_messages_lock:
-        return {"messages": list(_shared_messages)}
+        return {"messages": _load_messages_from_store()}
 
 
 def _append_message(message: dict):
     with _shared_messages_lock:
-        _shared_messages.append(message)
-        return list(_shared_messages)
+        messages = _load_messages_from_store()
+        messages.append(_normalize_message(message))
+        _save_messages_to_store(messages)
+        return list(messages)
 
 
 def clear_shared_messages():
     with _shared_messages_lock:
-        _shared_messages.clear()
+        _save_messages_to_store([])
 
 
 def _get_model_stream_state():
