@@ -56,6 +56,7 @@ _shared_messages_lock = Lock()
 _model_stream_state = {"enabled": False, "frame": None, "updated_at": None}
 _model_stream_lock = Lock()
 MESSAGES_STORE_PATH = str(Path(__file__).resolve().parent / "data" / "shared_messages.json")
+_MESSAGES_CACHE: list[dict] = []
 
 
 def _normalize_message(message: dict, *, default_role: str = "user") -> dict:
@@ -72,32 +73,46 @@ def _normalize_message(message: dict, *, default_role: str = "user") -> dict:
     }
 
 
-def _ensure_store_exists() -> Path:
+def _ensure_store_exists() -> Path | None:
     path = Path(MESSAGES_STORE_PATH)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        path.write_text("[]", encoding="utf-8")
-    return path
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            path.write_text("[]", encoding="utf-8")
+        return path
+    except OSError:
+        return None
 
 
 def _load_messages_from_store() -> list[dict]:
     path = _ensure_store_exists()
+    if path is None:
+        return list(_MESSAGES_CACHE)
+
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
-        return []
+        return list(_MESSAGES_CACHE)
 
     if not isinstance(payload, list):
-        return []
+        return list(_MESSAGES_CACHE)
 
     return [_normalize_message(message) for message in payload if isinstance(message, dict)]
 
 
 def _save_messages_to_store(messages: list[dict]) -> None:
+    global _MESSAGES_CACHE
+    _MESSAGES_CACHE = list(messages)
     path = _ensure_store_exists()
-    temp_path = path.with_suffix(path.suffix + ".tmp")
-    temp_path.write_text(json.dumps(messages, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(temp_path, path)
+    if path is None:
+        return
+
+    try:
+        temp_path = path.with_suffix(path.suffix + ".tmp")
+        temp_path.write_text(json.dumps(messages, ensure_ascii=False, indent=2), encoding="utf-8")
+        os.replace(temp_path, path)
+    except OSError:
+        pass
 
 
 def _get_state():
@@ -186,25 +201,29 @@ def live_state():
 
 @app.route("/api/post-message", methods=["POST"])
 def post_message():
-    data = request.get_json(silent=True) or {}
-    role = (data.get("role") or "user").strip() or "user"
-    content = (data.get("content") or "").strip()
-    if not content:
-        return jsonify({"error": "Mensagem vazia."}), 400
+    try:
+        data = request.get_json(silent=True) or {}
+        role = (data.get("role") or "user").strip() or "user"
+        content = (data.get("content") or "").strip()
+        if not content:
+            return jsonify({"error": "Mensagem vazia."}), 400
 
-    viewer_name = (data.get("viewerName") or "").strip() or None
-    sender_color = (data.get("senderColor") or "").strip() or None
-    session_id = (data.get("sessionId") or "").strip() or None
+        viewer_name = (data.get("viewerName") or "").strip() or None
+        sender_color = (data.get("senderColor") or "").strip() or None
+        session_id = (data.get("sessionId") or "").strip() or None
 
-    message = {
-        "role": role,
-        "content": content,
-        "viewerName": viewer_name,
-        "senderColor": sender_color,
-        "sessionId": session_id,
-    }
-    _append_message(message)
-    return jsonify({"ok": True, "messages": _get_state()["messages"]})
+        message = {
+            "role": role,
+            "content": content,
+            "viewerName": viewer_name,
+            "senderColor": sender_color,
+            "sessionId": session_id,
+        }
+        _append_message(message)
+        return jsonify({"ok": True, "messages": _get_state()["messages"]})
+    except Exception as exc:
+        app.logger.exception("Erro em /api/post-message")
+        return jsonify({"error": "Erro interno ao salvar a mensagem. Tente novamente."}), 500
 
 
 @app.route("/api/model/stream", methods=["POST"])
