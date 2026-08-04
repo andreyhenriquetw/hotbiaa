@@ -386,39 +386,6 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* ── Typing indicator ── */
-.typing {
-  display: none;
-  align-self: flex-start;
-  align-items: center;
-  gap: 5px;
-  background: var(--overlay-dark);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 12px 18px;
-  border-radius: var(--radius-pill);
-}
-
-.typing.visible {
-  display: flex;
-}
-
-.typing span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--typing-pink);
-  animation: typingBounce 1.2s infinite ease-in-out;
-}
-
-.typing span:nth-child(2) {
-  animation-delay: 0.18s;
-}
-
-.typing span:nth-child(3) {
-  animation-delay: 0.36s;
-}
-
 /* ── Error ── */
 .error-banner {
   display: none;

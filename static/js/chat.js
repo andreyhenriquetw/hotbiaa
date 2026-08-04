@@ -29,7 +29,6 @@ const VIDEO_CALL_PLAN_PRICES = {
 const chatArea = document.getElementById("chat-area");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
-const typingIndicator = document.getElementById("typing");
 const errorBanner = document.getElementById("error-banner");
 const bgVideo = document.querySelector(".bg-video");
 
@@ -216,7 +215,7 @@ function addMessage(
   }
 
   wrapper.appendChild(bubble);
-  chatArea.insertBefore(wrapper, typingIndicator);
+  chatArea.appendChild(wrapper);
   scrollToBottom();
 
   if (!renderOnly) {
@@ -1514,8 +1513,6 @@ function setLoading(loading) {
   isSending = loading;
   sendBtn.disabled = loading;
   userInput.disabled = loading;
-  typingIndicator.classList.toggle("visible", loading);
-  scrollToBottom();
 }
 
 function autoResizeTextarea() {
