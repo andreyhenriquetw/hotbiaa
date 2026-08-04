@@ -1526,6 +1526,19 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function readJsonResponse(response, fallback = null) {
+  const rawText = await response.text();
+  if (!rawText) return fallback;
+
+  try {
+    return JSON.parse(rawText);
+  } catch (error) {
+    const preview = rawText.slice(0, 220).replace(/\s+/g, " ");
+    console.warn("Resposta não-JSON recebida:", response.url, preview);
+    return fallback;
+  }
+}
+
 function promptViewerName() {
   if (viewerName) return viewerName;
   const state = loadState();
@@ -1595,9 +1608,9 @@ async function sendMessage() {
       }),
     });
 
-    const data = await response.json();
+    const data = await readJsonResponse(response, {});
     if (!response.ok) {
-      throw new Error(data.error || "Não foi possível enviar a mensagem.");
+      throw new Error(data?.error || "Não foi possível enviar a mensagem.");
     }
 
     const nextHistory = (data.messages || []).map((msg) => ({
@@ -1697,8 +1710,8 @@ function restorePaymentFromStorage() {
 async function refreshChatFromServer() {
   try {
     const response = await fetch("/api/live-state");
-    const data = await response.json();
-    if (!Array.isArray(data.messages)) return;
+    const data = await readJsonResponse(response, {});
+    if (!response.ok || !data || !Array.isArray(data.messages)) return;
 
     const nextHistory = data.messages.map((msg) => ({
       role: msg.role,
@@ -1797,8 +1810,8 @@ restoreSession();
 setInterval(async () => {
   try {
     const response = await fetch("/api/live-state");
-    const data = await response.json();
-    if (!Array.isArray(data.messages)) return;
+    const data = await readJsonResponse(response, {});
+    if (!response.ok || !data || !Array.isArray(data.messages)) return;
     const nextHistory = data.messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
