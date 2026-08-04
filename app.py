@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
@@ -59,6 +60,10 @@ MESSAGES_STORE_PATH = str(Path(__file__).resolve().parent / "data" / "shared_mes
 _MESSAGES_CACHE: list[dict] = []
 
 
+def _utc_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z")
+
+
 def _normalize_message(message: dict, *, default_role: str = "user") -> dict:
     role = (message.get("role") or default_role).strip() or default_role
     content = (message.get("content") or "").strip()
@@ -70,6 +75,7 @@ def _normalize_message(message: dict, *, default_role: str = "user") -> dict:
         "sessionId": message.get("sessionId"),
         "type": message.get("type") or "text",
         "images": message.get("images") or [],
+        "timestamp": message.get("timestamp") or message.get("createdAt") or message.get("created_at") or _utc_timestamp(),
     }
 
 
@@ -115,9 +121,47 @@ def _save_messages_to_store(messages: list[dict]) -> None:
         pass
 
 
-def _get_state():
+def _parse_timestamp(value: str | None):
+    if not value:
+        return None
+
+    text = str(value).strip()
+    if not text:
+        return None
+
+    try:
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        return datetime.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def _filter_messages_since(messages: list[dict], since: str | None) -> list[dict]:
+    if not since:
+        return list(messages)
+
+    since_value = (since or "").strip()
+    if not since_value:
+        return list(messages)
+
+    since_dt = _parse_timestamp(since_value)
+    if since_dt is None:
+        return [message for message in messages if (message.get("timestamp") or "") > since_value]
+
+    filtered: list[dict] = []
+    for message in messages:
+        message_dt = _parse_timestamp(message.get("timestamp"))
+        if message_dt is not None and message_dt > since_dt:
+            filtered.append(message)
+
+    return filtered
+
+
+def _get_state(since: str | None = None):
     with _shared_messages_lock:
-        return {"messages": _load_messages_from_store()}
+        messages = _load_messages_from_store()
+        return {"messages": _filter_messages_since(messages, since)}
 
 
 def _append_message(message: dict):
@@ -196,7 +240,8 @@ def chat():
 
 @app.route("/api/live-state", methods=["GET"])
 def live_state():
-    return jsonify(_get_state())
+    since = (request.args.get("since") or "").strip()
+    return jsonify(_get_state(since=since))
 
 
 @app.route("/api/post-message", methods=["POST"])

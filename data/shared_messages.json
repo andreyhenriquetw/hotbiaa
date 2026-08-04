@@ -1,1 +1,92 @@
-[]
+[
+  {
+    "role": "user",
+    "content": "oi",
+    "viewerName": "daasdsadsa",
+    "senderColor": "#f3337a",
+    "sessionId": "1785867686522-ny1avm",
+    "type": "text",
+    "images": [],
+    "timestamp": "2026-08-04T18:30:17.376099Z"
+  },
+  {
+    "role": "user",
+    "content": "sdds",
+    "viewerName": "daasdsadsa",
+    "senderColor": "#f3337a",
+    "sessionId": "1785867686522-ny1avm",
+    "type": "text",
+    "images": [],
+    "timestamp": "2026-08-04T18:30:20.190039Z"
+  },
+  {
+    "role": "user",
+    "content": "dsd",
+    "viewerName": "daasdsadsa",
+    "senderColor": "#f3337a",
+    "sessionId": "1785867686522-ny1avm",
+    "type": "text",
+    "images": [],
+    "timestamp": "2026-08-04T18:30:21.839562Z"
+  },
+  {
+    "role": "user",
+    "content": "s",
+    "viewerName": "daasdsadsa",
+    "senderColor": "#f3337a",
+    "sessionId": "1785867686522-ny1avm",
+    "type": "text",
+    "images": [],
+    "timestamp": "2026-08-04T18:30:23.630913Z"
+  },
+  {
+    "role": "user",
+    "content": "sadsad",
+    "viewerName": "daasdsadsa",
+    "senderColor": "#f3337a",
+    "sessionId": "1785867686522-ny1avm",
+    "type": "text",
+    "images": [],
+    "timestamp": "2026-08-04T18:32:48.949200Z"
+  },
+  {
+    "role": "user",
+    "content": "sd",
+    "viewerName": "daasdsadsa",
+    "senderColor": "#f3337a",
+    "sessionId": "1785867686522-ny1avm",
+    "type": "text",
+    "images": [],
+    "timestamp": "2026-08-04T18:32:50.983411Z"
+  },
+  {
+    "role": "user",
+    "content": "asdsada",
+    "viewerName": "andrey",
+    "senderColor": "#ff8f44",
+    "sessionId": "1785868403676-1ojpdx",
+    "type": "text",
+    "images": [],
+    "timestamp": "2026-08-04T18:33:27.239623Z"
+  },
+  {
+    "role": "assistant",
+    "content": "asdsda",
+    "viewerName": null,
+    "senderColor": null,
+    "sessionId": null,
+    "type": "text",
+    "images": [],
+    "timestamp": "2026-08-04T18:33:35.670306Z"
+  },
+  {
+    "role": "user",
+    "content": "asdsad",
+    "viewerName": "andrey",
+    "senderColor": "#ff8f44",
+    "sessionId": "1785868403676-1ojpdx",
+    "type": "text",
+    "images": [],
+    "timestamp": "2026-08-04T18:33:39.789918Z"
+  }
+]

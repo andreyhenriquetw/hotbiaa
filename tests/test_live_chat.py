@@ -31,6 +31,25 @@ def test_chat_persists_shared_message():
     assert payload["messages"][-1]["content"] == "oi"
 
 
+def test_live_state_returns_only_messages_after_since():
+    clear_shared_messages()
+    client = app.test_client()
+
+    first_response = client.post('/api/post-message', json={"role": "user", "content": "primeira"})
+    assert first_response.status_code == 200
+    first_payload = first_response.get_json()
+    first_timestamp = first_payload["messages"][-1]["timestamp"]
+
+    second_response = client.post('/api/post-message', json={"role": "assistant", "content": "segunda"})
+    assert second_response.status_code == 200
+
+    response = client.get('/api/live-state', query_string={"since": first_timestamp})
+    assert response.status_code == 200
+    payload = response.get_json()
+
+    assert [message["content"] for message in payload["messages"]] == ["segunda"]
+
+
 def test_live_state_initializes():
     clear_shared_messages()
     client = app.test_client()

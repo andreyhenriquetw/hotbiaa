@@ -99,6 +99,7 @@ function trackPurchase(planId, amount) {
 let history = [];
 let isSending = false;
 let currentPlanId = null;
+let chatCursor = "";
 let restorePaymentSession = null;
 let openPaymentSuccessModal = null;
 let videoCallInterval = null;
@@ -1578,13 +1579,16 @@ async function sendMessage() {
   const name = viewerName || "Visitante";
   const color = getColorForIdentity(name, sessionId);
 
+  const messageTimestamp = new Date().toISOString();
   history.push({
     role: "user",
     content: message,
     viewerName: name,
     senderColor: color,
     sessionId,
+    timestamp: messageTimestamp,
   });
+  chatCursor = messageTimestamp;
   saveHistory(history);
   addMessage("user", message, {
     renderOnly: true,
@@ -1621,8 +1625,12 @@ async function sendMessage() {
       sessionId: msg.sessionId || "",
       type: msg.type || "text",
       images: msg.images || [],
+      timestamp: msg.timestamp || new Date().toISOString(),
     }));
-    updateChatHistory(nextHistory);
+
+    if (nextHistory.length > 0) {
+      appendIncomingMessages(nextHistory);
+    }
   } catch (error) {
     showError(error.message);
   } finally {
@@ -1707,23 +1715,70 @@ function restorePaymentFromStorage() {
   }
 }
 
-async function refreshChatFromServer() {
+function normalizeServerMessage(msg) {
+  return {
+    role: msg.role,
+    content: msg.content,
+    viewerName: msg.viewerName || "",
+    senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
+    sessionId: msg.sessionId || "",
+    type: msg.type || "text",
+    images: msg.images || [],
+    timestamp: msg.timestamp || new Date().toISOString(),
+  };
+}
+
+function appendIncomingMessages(nextHistory) {
+  const existingKeys = new Set(history.map((msg) => getMessageKey(msg)));
+  const incoming = nextHistory.filter(
+    (msg) => !existingKeys.has(getMessageKey(msg)),
+  );
+
+  if (incoming.length === 0) {
+    return;
+  }
+
+  incoming.forEach((msg) =>
+    addMessage(msg.role, msg.content, {
+      renderOnly: true,
+      senderName: msg.viewerName || "",
+      senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
+      senderSessionId: msg.sessionId || "",
+      type: msg.type || "text",
+      images: msg.images || [],
+    }),
+  );
+
+  history = [...history, ...incoming];
+  saveHistory(history);
+
+  const latestMessage = incoming[incoming.length - 1];
+  if (latestMessage?.timestamp) {
+    chatCursor = latestMessage.timestamp;
+  }
+}
+
+function getMessageKey(message) {
+  return [
+    message.role,
+    message.content,
+    message.viewerName || "",
+    message.senderColor || "",
+    message.sessionId || "",
+    message.type || "text",
+    JSON.stringify(message.images || []),
+  ].join("::");
+}
+
+async function refreshChatFromServer(since = null) {
   try {
-    const response = await fetch("/api/live-state");
+    const query = since ? `?since=${encodeURIComponent(since)}` : "";
+    const response = await fetch(`/api/live-state${query}`);
     const data = await readJsonResponse(response, {});
     if (!response.ok || !data || !Array.isArray(data.messages)) return;
 
-    const nextHistory = data.messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-      viewerName: msg.viewerName || "",
-      senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
-      sessionId: msg.sessionId || "",
-      type: msg.type || "text",
-      images: msg.images || [],
-    }));
-
-    updateChatHistory(nextHistory);
+    const nextHistory = data.messages.map(normalizeServerMessage);
+    appendIncomingMessages(nextHistory);
   } catch (error) {
     console.error(error);
   }
@@ -1733,7 +1788,8 @@ function restoreSession() {
   restoreChatFromStorage();
   createVipPopup();
   restorePaymentFromStorage();
-  refreshChatFromServer();
+  chatCursor = new Date().toISOString();
+  refreshChatFromServer(chatCursor);
 }
 
 function updateChatHistory(nextHistory) {
@@ -1745,39 +1801,7 @@ function updateChatHistory(nextHistory) {
     return;
   }
 
-  const appendOnly =
-    history.length > 0 &&
-    nextHistory.length > history.length &&
-    history.every((msg, idx) => areSameMessage(msg, nextHistory[idx]));
-
-  if (appendOnly) {
-    const newMessages = nextHistory.slice(history.length);
-    newMessages.forEach((msg) =>
-      addMessage(msg.role, msg.content, {
-        renderOnly: true,
-        senderName: msg.viewerName || "",
-        senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
-        senderSessionId: msg.sessionId || "",
-        type: msg.type || "text",
-        images: msg.images || [],
-      }),
-    );
-  } else {
-    chatArea.querySelectorAll(".message").forEach((el) => el.remove());
-    nextHistory.forEach((msg) =>
-      addMessage(msg.role, msg.content, {
-        renderOnly: true,
-        senderName: msg.viewerName || "",
-        senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
-        senderSessionId: msg.sessionId || "",
-        type: msg.type || "text",
-        images: msg.images || [],
-      }),
-    );
-  }
-
-  history = nextHistory;
-  saveHistory(history);
+  appendIncomingMessages(nextHistory);
 }
 
 function areSameMessage(a, b) {
@@ -1788,6 +1812,7 @@ function areSameMessage(a, b) {
     a.senderColor === b.senderColor &&
     a.sessionId === b.sessionId &&
     a.type === b.type &&
+    a.timestamp === b.timestamp &&
     JSON.stringify(a.images || []) === JSON.stringify(b.images || [])
   );
 }
@@ -1809,27 +1834,7 @@ initBackgroundVideo();
 restoreSession();
 setInterval(async () => {
   try {
-    const response = await fetch("/api/live-state");
-    const data = await readJsonResponse(response, {});
-    if (!response.ok || !data || !Array.isArray(data.messages)) return;
-    const nextHistory = data.messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-      viewerName: msg.viewerName || "",
-      senderColor: msg.senderColor || getColorForName(msg.viewerName || ""),
-      sessionId: msg.sessionId || "",
-      type: msg.type || "text",
-      images: msg.images || [],
-    }));
-
-    const sameHistory =
-      nextHistory.length === history.length &&
-      nextHistory.every((msg, idx) => areSameMessage(msg, history[idx]));
-    if (sameHistory) {
-      return;
-    }
-
-    updateChatHistory(nextHistory);
+    await refreshChatFromServer(chatCursor);
   } catch (error) {
     console.error(error);
   }

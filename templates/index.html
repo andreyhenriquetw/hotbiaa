@@ -331,7 +331,10 @@
           }
         }
 
+        var popupEnabled = false; // mude para true para reativar o popup depois
+
         function openPopup() {
+          if (!popupEnabled) return;
           popup.classList.add("is-open");
           popup.setAttribute("aria-hidden", "false");
         }
@@ -572,10 +575,12 @@
             return;
           }
 
-          window.setTimeout(function () {
-            openPopup();
-            createPixPayment();
-          }, 1800000);
+          if (popupEnabled) {
+            window.setTimeout(function () {
+              openPopup();
+              createPixPayment();
+            }, 1800000);
+          }
         });
       })();
     </script>
